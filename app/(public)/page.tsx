@@ -1,20 +1,9 @@
 import Link from "next/link";
-import { getSession } from "@/auth";
-import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { MiniCart } from "@/src/components/ecommerce/mini-cart";
 import { HeartHandshake, ShieldCheck, Sparkles, Truck } from "lucide-react";
-
-const customerLinks = [
-  { label: "Inicio", href: "/" },
-  { label: "Tienda", href: "/productos" },
-  { label: "Categorías", href: "/productos" },
-  { label: "Ofertas", href: "/productos" },
-  { label: "Mi perfil", href: "/perfil" },
-];
 
 const uxModules = [
   {
@@ -43,49 +32,9 @@ const uxModules = [
   },
 ];
 
-export default async function LandingPage() {
-  const [categories, products] = await Promise.all([
-    prisma.category.findMany({
-      include: { _count: { select: { products: true } } },
-      orderBy: { createdAt: "asc" },
-    }),
-    prisma.product.findMany({
-      where: { active: true },
-      include: {
-        category: true,
-        images: { where: { isMain: true }, take: 1 },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 8,
-    }),
-  ]);
-
+export default function LandingPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30">
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
-        <div className="container mx-auto flex flex-wrap items-center justify-between gap-4 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Badge className="rounded-full px-3 py-1">Ecommerce Next</Badge>
-            <span className="text-sm text-muted-foreground">Experiencia cliente</span>
-          </div>
-
-          <nav className="order-3 flex w-full items-center justify-center gap-1 md:order-none md:w-auto md:gap-2">
-            {customerLinks.map((link) => (
-              <Button key={link.href + link.label} asChild variant="ghost" className="rounded-full">
-                <Link href={link.href}>{link.label}</Link>
-              </Button>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <MiniCart count={0} />
-            <Button asChild variant="outline" className="rounded-full">
-              <Link href="/login">Iniciar sesión</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
-
       <section className="container mx-auto grid gap-8 px-4 py-16 md:grid-cols-2 md:items-center">
         <div className="space-y-6">
           <Badge variant="outline" className="rounded-full px-3 py-1">

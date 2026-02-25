@@ -1,9 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState, useTransition } from "react";
+import { FormEvent, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { runPixelPayCheckout } from "@/src/services/pixelpay.service";
 import { moneyFormatter } from "@/src/services/pixelpay.utils";
+import Locations from "@pixelpay/sdk-core/lib/resources/Locations";
 
 type ShippingMethodOption = {
   id: string;
@@ -47,6 +47,13 @@ export function PixelPayCheckout({
     [shippingMethodId, shippingMethods],
   );
 
+  const countries = useMemo(() => {
+    const countryMap = Locations.countriesList() as Record<string, string>;
+    return Object.entries(countryMap)
+      .map(([code, name]) => ({ code, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, "es"));
+  }, []);
+
   const [form, setForm] = useState({
     addressId: "",
     couponCode: "",
@@ -66,7 +73,15 @@ export function PixelPayCheckout({
     billing_postal_code: "11101",
   });
 
-  const onSubmit = () => {
+  const departments = useMemo(() => {
+    const stateMap = Locations.statesList(form.billing_country) as Record<string, string>;
+    return Object.entries(stateMap)
+      .map(([code, name]) => ({ code, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, "es"));
+  }, [form.billing_country]);
+
+  const onSubmit = (event?: FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
     setMessage("");
 
     startTransition(async () => {
@@ -116,8 +131,9 @@ export function PixelPayCheckout({
       <CardHeader>
         <CardTitle>Checkout seguro con PixelPay</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-5">
-        <div className="grid gap-4 md:grid-cols-2">
+      <CardContent>
+        <form id="pixelpay-checkout-form" className="space-y-5" onSubmit={onSubmit}>
+          <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label>Método de envío</Label>
             <Select value={shippingMethodId} onValueChange={setShippingMethodId}>
@@ -141,9 +157,9 @@ export function PixelPayCheckout({
           </div>
         </div>
 
-        <Separator />
+          <Separator />
 
-        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
             <p className="text-sm font-medium text-muted-foreground">Datos del cliente</p>
             <div className="space-y-2">
@@ -238,7 +254,7 @@ export function PixelPayCheckout({
           </div>
         </div>
 
-        <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+          <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
           <p className="text-sm font-medium text-muted-foreground">Dirección de facturación</p>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2 md:col-span-2">
@@ -259,20 +275,45 @@ export function PixelPayCheckout({
             </div>
             <div className="space-y-2">
               <Label>Departamento / Estado</Label>
-              <Input
+              <Select
                 value={form.billing_state}
-                onChange={(e) => setForm((prev) => ({ ...prev, billing_state: e.target.value }))}
-                placeholder="Cortés"
-              />
+                onValueChange={(value) => setForm((prev) => ({ ...prev, billing_state: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un departamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((department) => (
+                    <SelectItem key={department.code} value={department.code}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>País</Label>
-              <Input
+              <Select
                 value={form.billing_country}
-                onChange={(e) => setForm((prev) => ({ ...prev, billing_country: e.target.value.toUpperCase() }))}
-                placeholder="HN"
-                maxLength={2}
-              />
+                onValueChange={(value) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    billing_country: value,
+                    billing_state: "",
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un país" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Código postal</Label>
@@ -293,11 +334,10 @@ export function PixelPayCheckout({
           </div>
         </div>
 
-        <Button type="button" disabled={isPending || !shippingMethodId} onClick={onSubmit}>
-          {isPending ? "Procesando..." : "Pagar con PixelPay"}
-        </Button>
+          {message ? <p className="text-sm">{message}</p> : null}
 
-        {message ? <p className="text-sm">{message}</p> : null}
+          <button type="submit" hidden disabled={isPending || !shippingMethodId} />
+        </form>
       </CardContent>
     </Card>
   );
