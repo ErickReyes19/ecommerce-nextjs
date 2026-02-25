@@ -15,9 +15,9 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Diario Tiempo | Periodismo digital de confianza",
+  title: "Tienda | Tu tienda online de confianza",
   description:
-    "Accede a la edicion digital diaria, contenido premium y periodismo verificado. Suscribete a Diario Tiempo.",
+    "Descubre productos de calidad al mejor precio. Envios rapidos, pagos seguros y atencion personalizada.",
 };
 
 export const viewport: Viewport = {

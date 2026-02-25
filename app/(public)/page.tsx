@@ -1,38 +1,57 @@
-import Link from "next/link";
-import { getSession } from "@/auth";
-import { redirect } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { prisma } from "@/lib/prisma";
+import { HeroSection } from "@/src/components/ecommerce/hero-section";
+import { CategoriesGrid } from "@/src/components/ecommerce/categories-grid";
+import { FeaturedProducts } from "@/src/components/ecommerce/featured-products";
+import { PromoSection } from "@/src/components/ecommerce/promo-section";
+import { FeaturesStrip } from "@/src/components/ecommerce/features-strip";
+
+const categoryImages: Record<string, string> = {
+  0: "/images/category-fashion.jpg",
+  1: "/images/category-accessories.jpg",
+  2: "/images/category-home.jpg",
+};
 
 export default async function LandingPage() {
-  const session = await getSession();
-  if (session) redirect("/mi-perfil");
+  const [categories, products] = await Promise.all([
+    prisma.category.findMany({
+      include: { _count: { select: { products: true } } },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.product.findMany({
+      where: { active: true },
+      include: {
+        category: true,
+        images: { where: { isMain: true }, take: 1 },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+    }),
+  ]);
+
+  const categoriesForGrid = categories.map((cat, i) => ({
+    name: cat.name,
+    slug: cat.slug,
+    image: categoryImages[String(i)] ?? "/images/category-home.jpg",
+    productCount: cat._count.products,
+  }));
+
+  const featuredProducts = products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    basePrice: Number(p.basePrice),
+    compareAtPrice: p.compareAtPrice ? Number(p.compareAtPrice) : null,
+    category: { name: p.category.name },
+    image: p.images[0]?.url ?? null,
+  }));
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-      <section className="container mx-auto px-4 py-20 text-center space-y-6">
-        <Badge variant="outline">Nuevo ecommerce con Next.js + Prisma</Badge>
-        <h1 className="text-5xl font-bold tracking-tight">Tu tienda moderna lista para escalar</h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">Catálogo, checkout con Stripe, panel admin y analíticas en una sola base sólida.</p>
-        <div className="flex justify-center gap-3">
-          <Button asChild size="lg"><Link href="/productos">Explorar productos</Link></Button>
-          <Button asChild size="lg" variant="outline"><Link href="/login">Iniciar sesión</Link></Button>
-        </div>
-      </section>
-
-      <section className="container mx-auto px-4 pb-20 grid gap-4 md:grid-cols-3">
-        {[
-          ["Catálogo avanzado", "Filtros por categoría, precio, atributos y stock"],
-          ["Checkout robusto", "Validación de stock, cupones, impuestos y envíos"],
-          ["Backoffice completo", "Gestión de productos, pedidos, usuarios y reportes"],
-        ].map(([title, desc]) => (
-          <Card key={title}>
-            <CardHeader><CardTitle>{title}</CardTitle></CardHeader>
-            <CardContent>{desc}</CardContent>
-          </Card>
-        ))}
-      </section>
-    </main>
+    <>
+      <HeroSection />
+      <FeaturesStrip />
+      <CategoriesGrid categories={categoriesForGrid} />
+      <FeaturedProducts products={featuredProducts} />
+      <PromoSection />
+    </>
   );
 }
