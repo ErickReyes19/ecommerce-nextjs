@@ -9,7 +9,7 @@ export async function getProductos() {
 }
 
 export async function getProductoById(id: string) {
-  return prisma.product.findUnique({ where: { id } });
+  return prisma.product.findUnique({ where: { id }, include: { variants: { orderBy: { isDefault: "desc" } } } });
 }
 
 export async function createProduct(data: ProductInput) {
@@ -19,10 +19,23 @@ export async function createProduct(data: ProductInput) {
       name: parsed.name,
       slug: parsed.slug,
       description: parsed.description,
+      shortDescription: parsed.shortDescription || null,
       sku: parsed.sku,
+      active: parsed.active,
       basePrice: parsed.basePrice,
+      compareAtPrice: parsed.compareAtPrice || null,
       categoryId: parsed.categoryId,
       brandId: parsed.brandId || null,
+      variants: {
+        create: {
+          sku: `${parsed.sku}-DEFAULT`,
+          name: "Variante Base",
+          price: parsed.basePrice,
+          salePrice: parsed.salePrice || null,
+          stock: parsed.stock,
+          isDefault: true,
+        },
+      },
     },
   });
   revalidatePath("/productos-admin");
@@ -32,16 +45,49 @@ export async function createProduct(data: ProductInput) {
 export async function updateProduct(data: ProductInput) {
   const parsed = productSchema.parse(data);
   if (!parsed.id) throw new Error("ID requerido");
+
+  const defaultVariant = await prisma.productVariant.findFirst({
+    where: { productId: parsed.id, isDefault: true },
+    orderBy: { createdAt: "asc" },
+  });
+
   await prisma.product.update({
     where: { id: parsed.id },
     data: {
       name: parsed.name,
       slug: parsed.slug,
       description: parsed.description,
+      shortDescription: parsed.shortDescription || null,
       sku: parsed.sku,
+      active: parsed.active,
       basePrice: parsed.basePrice,
+      compareAtPrice: parsed.compareAtPrice || null,
       categoryId: parsed.categoryId,
       brandId: parsed.brandId || null,
+      variants: defaultVariant
+        ? {
+          update: {
+            where: { id: defaultVariant.id },
+            data: {
+              sku: `${parsed.sku}-DEFAULT`,
+              name: "Variante Base",
+              price: parsed.basePrice,
+              salePrice: parsed.salePrice || null,
+              stock: parsed.stock,
+              isDefault: true,
+            },
+          },
+        }
+        : {
+          create: {
+            sku: `${parsed.sku}-DEFAULT`,
+            name: "Variante Base",
+            price: parsed.basePrice,
+            salePrice: parsed.salePrice || null,
+            stock: parsed.stock,
+            isDefault: true,
+          },
+        },
     },
   });
   revalidatePath("/productos-admin");

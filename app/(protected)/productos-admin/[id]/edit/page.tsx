@@ -13,10 +13,12 @@ export default async function EditProductoPage({ params }: { params: Promise<{ i
   ]);
   if (!producto) return notFound();
 
+  const defaultVariant = producto.variants.find((variant) => variant.isDefault) ?? producto.variants[0];
+
   return (
     <div>
       <HeaderComponent Icon={Pencil} description="En este apartado podrás editar un producto" screenName="Editar Producto" />
-      <ProductoForm initialData={{ id: producto.id, name: producto.name, slug: producto.slug, description: producto.description, sku: producto.sku, basePrice: Number(producto.basePrice), categoryId: producto.categoryId, brandId: producto.brandId }} categorias={categorias} />
+      <ProductoForm initialData={{ id: producto.id, name: producto.name, slug: producto.slug, description: producto.description, shortDescription: producto.shortDescription, sku: producto.sku, basePrice: Number(producto.basePrice), compareAtPrice: producto.compareAtPrice ? Number(producto.compareAtPrice) : null, salePrice: defaultVariant?.salePrice ? Number(defaultVariant.salePrice) : null, stock: defaultVariant?.stock ?? 0, active: producto.active, categoryId: producto.categoryId, brandId: producto.brandId }} categorias={categorias} />
     </div>
   );
 }
