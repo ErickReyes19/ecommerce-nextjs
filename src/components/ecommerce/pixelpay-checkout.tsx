@@ -37,6 +37,23 @@ export function PixelPayCheckout({
   defaultAddress,
   defaultCity,
 }: PixelPayCheckoutProps) {
+  const normalizeLocationMap = (value: unknown): Record<string, string> => {
+    if (!value || typeof value !== "object") {
+      return {};
+    }
+
+    if (
+      "default" in value &&
+      value.default &&
+      typeof value.default === "object" &&
+      !Array.isArray(value.default)
+    ) {
+      return value.default as Record<string, string>;
+    }
+
+    return value as Record<string, string>;
+  };
+
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string>("");
@@ -48,7 +65,7 @@ export function PixelPayCheckout({
   );
 
   const countries = useMemo(() => {
-    const countryMap = Locations.countriesList() as Record<string, string>;
+    const countryMap = normalizeLocationMap(Locations.countriesList());
     return Object.entries(countryMap)
       .map(([code, name]) => ({ code, name }))
       .sort((a, b) => a.name.localeCompare(b.name, "es"));
@@ -74,7 +91,7 @@ export function PixelPayCheckout({
   });
 
   const departments = useMemo(() => {
-    const stateMap = Locations.statesList(form.billing_country) as Record<string, string>;
+    const stateMap = normalizeLocationMap(Locations.statesList(form.billing_country));
     return Object.entries(stateMap)
       .map(([code, name]) => ({ code, name }))
       .sort((a, b) => a.name.localeCompare(b.name, "es"));
