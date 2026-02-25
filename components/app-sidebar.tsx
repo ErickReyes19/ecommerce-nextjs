@@ -34,6 +34,15 @@ const items = [
   { title: "Mi Perfil", url: "/mi-perfil", icon: UserIcon, permiso: "ver_mi_perfil" },
 ];
 
+
+const tiendaItems = [
+  { title: "Ver tienda", url: "/" },
+  { title: "Productos tienda", url: "/productos" },
+  { title: "Carrito", url: "/carrito" },
+  { title: "Checkout", url: "/checkout" },
+  { title: "Mis pedidos / facturas", url: "/perfil" },
+];
+
 const ecommerceAdminItems = [
   { title: "Dashboard", url: "/dashboard" },
   { title: "Productos", url: "/productos-admin" },
@@ -97,6 +106,26 @@ export async function AppSidebar() {
                   </SidebarMenuButton>
                   <SidebarMenuSub>
                     {ecommerceAdminItems.map((item) => (
+                      <SidebarMenuSubItem key={item.url}>
+                        <SidebarMenuSubButton asChild>
+                          <Link href={item.url}>{item.title}</Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                </SidebarMenuItem>
+              )}
+
+              {usuario && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/productos">
+                      <LayersIcon size={16} className="p-0" />
+                      <span>Experiencia de compra</span>
+                    </Link>
+                  </SidebarMenuButton>
+                  <SidebarMenuSub>
+                    {tiendaItems.map((item) => (
                       <SidebarMenuSubItem key={item.url}>
                         <SidebarMenuSubButton asChild>
                           <Link href={item.url}>{item.title}</Link>

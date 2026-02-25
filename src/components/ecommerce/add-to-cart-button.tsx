@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingBag, Loader2 } from "lucide-react";
 import { addToCart } from "@/src/actions/cart-actions";
 import { toast } from "sonner";
+import { upsertLocalCartItem } from "@/src/lib/local-cart";
 
 export function AddToCartButton({
   productId,
@@ -27,6 +28,11 @@ export function AddToCartButton({
       if (result?.error) {
         toast.error(result.error);
       } else {
+        upsertLocalCartItem({
+          productId,
+          variantId,
+          quantity: 1,
+        });
         toast.success("Producto agregado al carrito");
       }
     });

@@ -10,6 +10,7 @@ export async function loginWithCredentialsAction(
 ): Promise<LoginActionState> {
   const identifier = formData.get("identifier");
   const contrasena = formData.get("contrasena");
+  const callbackUrl = formData.get("callbackUrl");
 
   if (typeof identifier !== "string" || typeof contrasena !== "string") {
     return { ok: false, message: "Debes ingresar usuario/correo y contraseña." };
@@ -35,7 +36,8 @@ export async function loginWithCredentialsAction(
     usuario = userByEmail.usuario;
   }
 
-  const result = await login({ usuario, contrasena }, "/mi-perfil");
+  const safeCallback = typeof callbackUrl === "string" && callbackUrl.startsWith("/") ? callbackUrl : "/mi-perfil";
+  const result = await login({ usuario, contrasena }, safeCallback);
 
   if (result.error) {
     return { ok: false, message: "Usuario/correo o contraseña inválidos." };
@@ -44,6 +46,6 @@ export async function loginWithCredentialsAction(
   return {
     ok: true,
     message: "Inicio de sesión exitoso.",
-    redirect: result.redirect ?? "/mi-perfil",
+    redirect: result.redirect ?? safeCallback,
   };
 }

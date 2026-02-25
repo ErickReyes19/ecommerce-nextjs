@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import Image from "next/image";
 import { ShoppingBag, ArrowRight, Trash2 } from "lucide-react";
-import { removeCartItem } from "@/src/actions/cart-actions";
+import { removeCartItem, updateCartItem } from "@/src/actions/cart-actions";
+import { CartLocalStorageSync } from "@/src/components/ecommerce/cart-local-storage-sync";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -50,6 +51,15 @@ export default async function CarritoPage() {
       <p className="mb-8 text-sm text-muted-foreground">
         {items.length} articulo{items.length !== 1 ? "s" : ""} en tu carrito
       </p>
+
+      <CartLocalStorageSync
+        token={token}
+        items={items.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId ?? undefined,
+          quantity: item.quantity,
+        }))}
+      />
 
       {items.length > 0 ? (
         <div className="grid gap-8 lg:grid-cols-3">
@@ -100,10 +110,27 @@ export default async function CarritoPage() {
                           </p>
                         )}
                       </div>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="secondary">
-                          Cant: {item.quantity}
-                        </Badge>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <form
+                            action={async () => {
+                              "use server";
+                              const nextQty = Math.max(1, item.quantity - 1);
+                              await updateCartItem(item.id, nextQty);
+                            }}
+                          >
+                            <Button type="submit" variant="outline" size="sm">-</Button>
+                          </form>
+                          <Badge variant="secondary">Cant: {item.quantity}</Badge>
+                          <form
+                            action={async () => {
+                              "use server";
+                              await updateCartItem(item.id, item.quantity + 1);
+                            }}
+                          >
+                            <Button type="submit" variant="outline" size="sm">+</Button>
+                          </form>
+                        </div>
                         <span className="font-semibold text-foreground">
                           ${(unitPrice * item.quantity).toFixed(2)}
                         </span>

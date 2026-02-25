@@ -19,7 +19,7 @@ const navLinks = [
   { label: "Categorias", href: "/productos?vista=categorias" },
 ];
 
-export function StoreNavbar({ cartCount = 0 }: { cartCount?: number }) {
+export function StoreNavbar({ cartCount = 0, accountHref = "/login" }: { cartCount?: number; accountHref?: string }) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export function StoreNavbar({ cartCount = 0 }: { cartCount?: number }) {
             </Link>
           </Button>
           <Button variant="ghost" size="icon" className="rounded-full" asChild>
-            <Link href="/login">
+            <Link href={accountHref}>
               <User className="h-4 w-4" />
               <span className="sr-only">Mi cuenta</span>
             </Link>
@@ -130,7 +130,7 @@ export function StoreNavbar({ cartCount = 0 }: { cartCount?: number }) {
                 ))}
                 <div className="my-4 border-t border-border" />
                 <Link
-                  href="/login"
+                  href={accountHref}
                   className="rounded-lg px-3 py-3 text-base font-medium text-foreground transition-colors hover:bg-secondary"
                 >
                   Iniciar sesion
