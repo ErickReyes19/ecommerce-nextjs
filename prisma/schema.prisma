@@ -1,0 +1,77 @@
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Permiso {
+  id          String       @id @default(uuid())
+  nombre      String       @unique
+  descripcion String
+  createAt    DateTime     @default(now())
+  updateAt    DateTime     @updatedAt
+  activo      Boolean
+  roles       RolPermiso[]
+}
+
+model RolPermiso {
+  id        String   @id @default(uuid())
+  rolId     String
+  permisoId String
+  createAt  DateTime @default(now())
+
+  permiso Permiso @relation(fields: [permisoId], references: [id])
+  rol     Rol     @relation(fields: [rolId], references: [id])
+
+  @@unique([rolId, permisoId])
+  @@index([permisoId], map: "RolPermiso_permisoId_fkey")
+}
+
+model Rol {
+  id          String       @id @default(uuid())
+  nombre      String       @unique
+  descripcion String
+  createAt    DateTime     @default(now())
+  updateAt    DateTime     @updatedAt
+  activo      Boolean
+  permisos    RolPermiso[]
+  usuarios    Usuarios[]
+}
+
+model Usuarios {
+  id                  String               @id @db.VarChar(36)
+  usuario             String               @db.VarChar(50)
+  contrasena          String               @db.LongText
+  nombre              String?              @db.VarChar(100)
+  fotoUrl             String?              @db.VarChar(512)
+  direccion           String?              @db.VarChar(180)
+  telefono            String?              @db.VarChar(30)
+  ciudad              String?              @db.VarChar(100)
+  DebeCambiarPassword Boolean?
+  email               String               @unique
+  createAt            DateTime             @default(now())
+  updateAt            DateTime             @updatedAt
+  rol_id              String               @db.VarChar(36)
+  activo              Boolean              @db.Bit(1)
+  rol                 Rol                  @relation(fields: [rol_id], references: [id])
+  PasswordResetToken  PasswordResetToken[]
+
+  @@index([rol_id], map: "IX_Usuarios_rol_id")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  userId    String   @db.VarChar(36)
+  token     String   @unique @db.VarChar(128)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  Usuario Usuarios @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "IX_PasswordResetToken_userId")
+}
