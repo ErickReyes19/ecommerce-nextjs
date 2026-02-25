@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { productSchema } from "@/src/lib/ecommerce-schemas";
+import { productSchema } from "./schema";
 import { revalidatePath } from "next/cache";
 
 export async function createProduct(formData: FormData) {
@@ -10,12 +10,12 @@ export async function createProduct(formData: FormData) {
 
   await prisma.product.create({ data: parsed.data });
   revalidatePath("/productos");
-  revalidatePath("/admin/productos");
+  revalidatePath("/protected/productos");
   return { ok: true };
 }
 
 export async function deleteProduct(id: string) {
   await prisma.product.delete({ where: { id } });
   revalidatePath("/productos");
-  revalidatePath("/admin/productos");
+  revalidatePath("/protected/productos");
 }
