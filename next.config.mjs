@@ -10,6 +10,10 @@ const nextConfig = {
           protocol: "https",
           hostname: "d3dr34vkycigpz.cloudfront.net",
         },
+        {
+          protocol: "https",
+          hostname: "es.pandora.net",
+        },
       ],
   },
   webpack: (config, { isServer }) => {
