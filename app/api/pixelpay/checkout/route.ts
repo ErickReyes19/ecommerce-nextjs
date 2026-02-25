@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import Settings from "@pixelpay/sdk-core/lib/models/Settings";
 import TransactionService from "@pixelpay/sdk-core/lib/services/Transaction";
+import { getOrCreateEcommerceUserBySessionUserId } from "@/src/lib/ecommerce-user";
 
 const PAYMENT_PROVIDER = "PIXELPAY";
 const PAYMENT_CURRENCY = "HNL";
@@ -131,11 +132,13 @@ export async function POST(request: Request) {
   const grandTotal = subtotal + shippingTotal;
 
   const reference = `PIX-${Date.now()}`;
+  const ecommerceUser = await getOrCreateEcommerceUserBySessionUserId(session.IdUser);
 
   const order = await prisma.order.create({
     data: {
       orderNumber: `ORD-${Date.now()}`,
       status: "PENDIENTE",
+      userId: ecommerceUser?.id,
       addressId: body.addressId,
       subtotal,
       shippingTotal,
