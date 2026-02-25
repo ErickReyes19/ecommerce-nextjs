@@ -6,6 +6,22 @@ import BillingModel from "@pixelpay/sdk-core/lib/models/Billing";
 import SaleTransactionModel from "@pixelpay/sdk-core/lib/requests/SaleTransaction";
 import TransactionService from "@pixelpay/sdk-core/lib/services/Transaction";
 
+export type ShippingMethodOption = {
+  id: string;
+  name: string;
+  price: number;
+};
+
+export type PixelPayCheckoutProps = {
+  cartId: string;
+  shippingMethods: ShippingMethodOption[];
+  defaultCustomerName: string;
+  defaultCustomerEmail: string;
+  defaultPhone: string;
+  defaultAddress: string;
+  defaultCity: string;
+};
+
 export type BillingData = {
   billing_name: string;
   billing_last_name: string;
@@ -29,6 +45,7 @@ export type CardData = {
 export type InitCheckoutPayload = {
   cartId: string;
   shippingMethodId: string;
+  shippingPrice?: number;
   addressId?: string;
   couponCode?: string;
 };
@@ -47,6 +64,7 @@ export type InitResponse = {
 
 export type PixelPayTransactionData = {
   response_approved?: boolean;
+  response_reason?: string;
   [key: string]: unknown;
 };
 
@@ -54,10 +72,13 @@ export type PixelPayApiResponse = {
   status?: number | string;
   code?: number | string;
   statusCode?: number | string;
+  httpCode?: number | string;
   success?: boolean;
-  data?: PixelPayTransactionData;
   message?: string;
+  responseType?: string;
+  type?: string;
   id?: string;
+  data?: PixelPayTransactionData;
   [key: string]: unknown;
 };
 

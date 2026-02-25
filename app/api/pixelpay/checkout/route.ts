@@ -95,6 +95,7 @@ export async function POST(request: Request) {
     cartId?: string;
     shippingMethodId?: string;
     addressId?: string;
+    shippingPrice?: number;
   };
 
   if (!body.cartId || !body.shippingMethodId) {
@@ -123,7 +124,10 @@ export async function POST(request: Request) {
     (acc, item) => acc + Number(item.variant?.salePrice ?? item.variant?.price ?? item.product.basePrice) * item.quantity,
     0,
   );
-  const shippingTotal = Number(shippingMethod.price);
+  const shippingTotal =
+    typeof body.shippingPrice === "number" && Number.isFinite(body.shippingPrice) && body.shippingPrice >= 0
+      ? body.shippingPrice
+      : Number(shippingMethod.price);
   const grandTotal = subtotal + shippingTotal;
 
   const reference = `PIX-${Date.now()}`;
