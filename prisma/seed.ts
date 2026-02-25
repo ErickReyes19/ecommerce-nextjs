@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient } from "@/lib/generated/prisma";
+import { PrismaClient, Prisma, CouponType, DiscountTarget, ShippingMethodType } from "@/lib/generated/prisma";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 
@@ -8,54 +8,39 @@ const prisma = new PrismaClient();
 const ADMIN_PERMISSIONS = [
   "ver_permisos", "ver_roles", "crear_roles", "editar_roles",
   "ver_usuarios", "crear_usuario", "editar_usuario",
-  "ver_profile", 
-  "ver_dashboard"
+  "ver_profile", "ver_dashboard",
 ] as const;
 
-const CLIENT_PERMISSIONS = [
-  "ver_mi_perfil",
+const CLIENT_PERMISSIONS = ["ver_mi_perfil"] as const;
+
+const categoryTree = [
+  { name: "Electrónica", slug: "electronica", children: ["smartphones", "laptops"] },
+  { name: "Hogar", slug: "hogar", children: ["cocina"] },
 ] as const;
 
+const brandNames = ["Apple", "Samsung", "Sony", "Xiaomi", "LG", "HP", "Lenovo", "Asus", "Philips", "Bosch"];
 
 async function upsertPermission(nombre: string) {
   return prisma.permiso.upsert({
     where: { nombre },
     update: { descripcion: `Permiso para ${nombre.replaceAll("_", " ")}`, activo: true },
-    create: {
-      id: randomUUID(),
-      nombre,
-      descripcion: `Permiso para ${nombre.replaceAll("_", " ")}`,
-      activo: true,
-    },
+    create: { id: randomUUID(), nombre, descripcion: `Permiso para ${nombre.replaceAll("_", " ")}`, activo: true },
   });
 }
 
 async function assignPermissions(rolId: string, permissionNames: readonly string[]) {
   const permissions = await prisma.permiso.findMany({ where: { nombre: { in: [...permissionNames] } } });
-  for (const permiso of permissions) {
-    await prisma.rolPermiso.upsert({
+  await Promise.all(permissions.map((permiso) =>
+    prisma.rolPermiso.upsert({
       where: { rolId_permisoId: { rolId, permisoId: permiso.id } },
       update: {},
       create: { rolId, permisoId: permiso.id },
-    });
-  }
+    }),
+  ));
 }
 
-async function main() {
-  const resetData = process.env.RESET_SEED === "true";
-  if (resetData) {
-    await prisma.rolPermiso.deleteMany();
-    await prisma.usuarios.deleteMany();
-    await prisma.rol.deleteMany();
-    await prisma.permiso.deleteMany();
-  }
-
-  await Promise.all(
-    [...ADMIN_PERMISSIONS, ...CLIENT_PERMISSIONS].map((nombre) => 
-      // Filter out any possible undefined values to avoid TS error
-      nombre ? upsertPermission(nombre) : Promise.resolve(null)
-    )
-  );
+async function seedLegacyAuth() {
+  await Promise.all([...ADMIN_PERMISSIONS, ...CLIENT_PERMISSIONS].map(upsertPermission));
 
   const [adminRole, clienteRole] = await Promise.all([
     prisma.rol.upsert({
@@ -77,58 +62,115 @@ async function main() {
     bcrypt.hash("Admin12345*", 10),
     bcrypt.hash("Cliente12345*", 10),
   ]);
-  // Admin
+
   await prisma.usuarios.upsert({
-    where: { email: "admin@membresia.local" }, // ✅ debe coincidir con create.email
-    update: {
-      usuario: "admin",
-      contrasena: adminPassword,
-      nombre: "Administrador",
-      fotoUrl: "https://i.pravatar.cc/150?img=12",
-      rol_id: adminRole.id,
-      activo: true,
-      DebeCambiarPassword: false,
-    },
+    where: { email: "admin@membresia.local" },
+    update: { usuario: "admin", contrasena: adminPassword, nombre: "Administrador", rol_id: adminRole.id, activo: true, DebeCambiarPassword: false },
+    create: { id: randomUUID(), usuario: "admin", contrasena: adminPassword, nombre: "Administrador", email: "admin@membresia.local", rol_id: adminRole.id, activo: true, DebeCambiarPassword: false },
+  });
+
+  await prisma.usuarios.upsert({
+    where: { email: "cliente@membresia.local" },
+    update: { usuario: "cliente", contrasena: clientePassword, nombre: "Cliente Demo", rol_id: clienteRole.id, activo: true, DebeCambiarPassword: false },
+    create: { id: randomUUID(), usuario: "cliente", contrasena: clientePassword, nombre: "Cliente Demo", email: "cliente@membresia.local", rol_id: clienteRole.id, activo: true, DebeCambiarPassword: false },
+  });
+}
+
+async function seedEcommerce() {
+  const roleCustomer = await prisma.role.upsert({ where: { name: "CUSTOMER" }, update: {}, create: { name: "CUSTOMER", description: "Cliente ecommerce" } });
+  await prisma.role.upsert({ where: { name: "ADMIN" }, update: {}, create: { name: "ADMIN", description: "Administrador ecommerce" } });
+
+  await prisma.user.upsert({
+    where: { email: "shopper@example.com" },
+    update: {},
     create: {
-      id: randomUUID(),
-      usuario: "admin",
-      contrasena: adminPassword,
-      nombre: "Administrador",
-      fotoUrl: "https://i.pravatar.cc/150?img=12",
-      email: "admin@membresia.local", // ✅ coincide con where
-      rol_id: adminRole.id,
-      activo: true,
-      DebeCambiarPassword: false,
+      email: "shopper@example.com",
+      name: "Shopper Demo",
+      passwordHash: await bcrypt.hash("Shopper123*", 10),
+      roleId: roleCustomer.id,
+      addresses: { create: { fullName: "Shopper Demo", line1: "Calle Principal 123", city: "Tegucigalpa", state: "FM", postalCode: "11101", country: "HN", phone: "+50499999999", isDefault: true } },
     },
   });
 
-  // Cliente
-  await prisma.usuarios.upsert({
-    where: { email: "cliente@membresia.local" }, // ✅ coincide con create.email
-    update: {
-      usuario: "cliente",
-      contrasena: clientePassword,
-      nombre: "Cliente Demo",
-      fotoUrl: "https://i.pravatar.cc/150?img=32",
-      rol_id: clienteRole.id,
-      activo: true,
-      DebeCambiarPassword: false,
-    },
-    create: {
-      id: randomUUID(),
-      usuario: "cliente",
-      contrasena: clientePassword,
-      nombre: "Cliente Demo",
-      fotoUrl: "https://i.pravatar.cc/150?img=32",
-      email: "cliente@membresia.local", // ✅ coincide con where
-      rol_id: clienteRole.id,
-      activo: true,
-      DebeCambiarPassword: false,
-    },
+  const brands = await Promise.all(brandNames.map((name) => prisma.brand.upsert({ where: { slug: name.toLowerCase() }, update: {}, create: { name, slug: name.toLowerCase() } })));
+
+  const rootCategories = await Promise.all(categoryTree.map((node) => prisma.category.upsert({ where: { slug: node.slug }, update: { name: node.name }, create: { name: node.name, slug: node.slug } })));
+  for (const [i, root] of rootCategories.entries()) {
+    const children = categoryTree[i].children;
+    for (const child of children) {
+      await prisma.category.upsert({ where: { slug: child }, update: { parentId: root.id }, create: { name: child.charAt(0).toUpperCase() + child.slice(1), slug: child, parentId: root.id } });
+    }
+  }
+
+  const allCategories = await prisma.category.findMany();
+
+  const colorAttr = await prisma.attribute.upsert({ where: { slug: "color" }, update: {}, create: { name: "Color", slug: "color" } });
+  const sizeAttr = await prisma.attribute.upsert({ where: { slug: "tamano" }, update: {}, create: { name: "Tamaño", slug: "tamano" } });
+
+  const colorValues = ["negro", "blanco", "azul"];
+  const sizeValues = ["s", "m", "l"];
+
+  await Promise.all(colorValues.map((value) => prisma.attributeValue.upsert({ where: { attributeId_slug: { attributeId: colorAttr.id, slug: value } }, update: { value }, create: { attributeId: colorAttr.id, slug: value, value } })));
+  await Promise.all(sizeValues.map((value) => prisma.attributeValue.upsert({ where: { attributeId_slug: { attributeId: sizeAttr.id, slug: value } }, update: { value: value.toUpperCase() }, create: { attributeId: sizeAttr.id, slug: value, value: value.toUpperCase() } })));
+
+  for (let i = 1; i <= 30; i++) {
+    const category = allCategories[i % allCategories.length];
+    const brand = brands[i % brands.length];
+    const slug = `producto-${i}`;
+    const basePrice = new Prisma.Decimal(50 + i * 3);
+
+    const product = await prisma.product.upsert({
+      where: { slug },
+      update: { name: `Producto ${i}`, basePrice, categoryId: category.id, brandId: brand.id },
+      create: {
+        name: `Producto ${i}`,
+        slug,
+        description: `Descripción completa del Producto ${i}`,
+        shortDescription: `Resumen del Producto ${i}`,
+        sku: `SKU-${i.toString().padStart(4, "0")}`,
+        basePrice,
+        compareAtPrice: basePrice.plus(20),
+        categoryId: category.id,
+        brandId: brand.id,
+      },
+    });
+
+    await prisma.productVariant.upsert({
+      where: { sku: `SKU-${i.toString().padStart(4, "0")}-A` },
+      update: { stock: 10 + i },
+      create: { productId: product.id, sku: `SKU-${i.toString().padStart(4, "0")}-A`, name: "Variante Base", price: basePrice, salePrice: i % 3 === 0 ? basePrice.minus(5) : null, stock: 10 + i, isDefault: true },
+    });
+
+    await prisma.productImage.createMany({
+      data: [
+        { productId: product.id, url: `/uploads/seed/product-${(i % 5) + 1}.jpg`, alt: `Producto ${i} imagen principal`, isMain: true, sortOrder: 1 },
+        { productId: product.id, url: `/uploads/seed/product-${((i + 1) % 5) + 1}.jpg`, alt: `Producto ${i} imagen secundaria`, isMain: false, sortOrder: 2 },
+      ],
+      skipDuplicates: true,
+    });
+  }
+
+  await prisma.coupon.upsert({
+    where: { code: "BIENVENIDA10" },
+    update: {},
+    create: { code: "BIENVENIDA10", type: CouponType.PERCENTAGE, target: DiscountTarget.GLOBAL, value: 10, maxDiscount: 25, startsAt: new Date(), usageLimit: 100 },
   });
 
+  const zone = await prisma.shippingZone.upsert({ where: { id: "default-zone" }, update: { countries: "HN,SV,GT" }, create: { id: "default-zone", name: "Centroamérica", countries: "HN,SV,GT" } });
 
-  console.log("Seed completado exitosamente");
+  await prisma.shippingMethod.upsert({
+    where: { id: "shipping-flat" },
+    update: { price: 5 },
+    create: { id: "shipping-flat", zoneId: zone.id, name: "Envío estándar", type: ShippingMethodType.FLAT, price: 5 },
+  });
+
+  await prisma.taxRate.upsert({ where: { country_region: { country: "HN", region: "FM" } }, update: { rate: 15 }, create: { country: "HN", region: "FM", rate: 15 } });
+}
+
+async function main() {
+  await seedLegacyAuth();
+  await seedEcommerce();
+  console.log("✅ Seed inicial completado (auth legado + ecommerce)");
 }
 
 main()

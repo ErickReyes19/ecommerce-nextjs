@@ -34,6 +34,16 @@ const items = [
   { title: "Mi Perfil", url: "/mi-perfil", icon: UserIcon, permiso: "ver_mi_perfil" },
 ];
 
+const ecommerceAdminItems = [
+  { title: "Dashboard", url: "/admin/dashboard" },
+  { title: "Productos", url: "/admin/productos" },
+  { title: "Categorías", url: "/admin/categorias" },
+  { title: "Pedidos", url: "/admin/pedidos" },
+  { title: "Usuarios", url: "/admin/usuarios" },
+  { title: "Cupones", url: "/admin/cupones" },
+  { title: "Reportes", url: "/admin/reportes" },
+];
+
 export async function AppSidebar() {
   const usuario = await getSession();
   const permisosUsuario = usuario?.Permiso || [];
@@ -75,6 +85,27 @@ export async function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+
+
+              {usuario?.Rol === "ADMIN" && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/admin/dashboard">
+                      <LayersIcon size={16} className="p-0" />
+                      <span>Backoffice Ecommerce</span>
+                    </Link>
+                  </SidebarMenuButton>
+                  <SidebarMenuSub>
+                    {ecommerceAdminItems.map((item) => (
+                      <SidebarMenuSubItem key={item.url}>
+                        <SidebarMenuSubButton asChild>
+                          <Link href={item.url}>{item.title}</Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                </SidebarMenuItem>
+              )}
 
               {showMantenimiento && (
                 <Collapsible className="group/collapsible">
