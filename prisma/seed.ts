@@ -9,9 +9,11 @@ const ADMIN_PERMISSIONS = [
   "ver_permisos", "ver_roles", "crear_roles", "editar_roles",
   "ver_usuarios", "crear_usuario", "editar_usuario",
   "ver_profile", "ver_dashboard",
+  "ver_productos_admin", "ver_categorias_admin", "ver_pedidos_admin",
+  "ver_cupones_admin", "ver_reportes_admin", "ver_facturas",
 ] as const;
 
-const CLIENT_PERMISSIONS = ["ver_mi_perfil"] as const;
+const CLIENT_PERMISSIONS = ["ver_mi_perfil", "ver_facturas"] as const;
 
 const categoryTree = [
   { name: "Electrónica", slug: "electronica", children: ["smartphones", "laptops"] },
