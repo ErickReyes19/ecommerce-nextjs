@@ -1,7 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { EcommerceUsuarioForm } from "../components/form";
+import { redirect } from "next/navigation";
 
-export default async function CreateEcommerceUsuarioPage() {
-  const roles = await prisma.role.findMany({ select: { id: true, name: true } });
-  return <EcommerceUsuarioForm initialData={{ name: "", email: "", roleId: null }} roles={roles} />;
+export default function CreateEcommerceUsuarioPage() {
+  redirect("/usuarios/create");
 }
