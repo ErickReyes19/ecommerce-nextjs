@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { formatHNL } from "@/src/lib/currency";
 
 export default async function PerfilPage() {
   const user = await prisma.user.findFirst({ include: { addresses: true, orders: { include: { items: true }, orderBy: { createdAt: "desc" } } } });
@@ -12,7 +13,7 @@ export default async function PerfilPage() {
       </section>
       <section className="space-y-2">
         <h2 className="text-xl font-semibold">Historial de pedidos</h2>
-        {user?.orders.map((order) => <div className="rounded border p-3" key={order.id}>{order.orderNumber} · {order.status} · ${Number(order.grandTotal).toFixed(2)}</div>)}
+        {user?.orders.map((order) => <div className="rounded border p-3" key={order.id}>{order.orderNumber} · {order.status} · {formatHNL(Number(order.grandTotal))}</div>)}
       </section>
     </main>
   );

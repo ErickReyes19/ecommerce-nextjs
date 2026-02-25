@@ -10,6 +10,7 @@ import { ShoppingBag, ArrowRight, Trash2 } from "lucide-react";
 import { removeCartItem, updateCartItem } from "@/src/actions/cart-actions";
 import { CartLocalStorageSync } from "@/src/components/ecommerce/cart-local-storage-sync";
 import type { Metadata } from "next";
+import { formatHNL } from "@/src/lib/currency";
 
 export const metadata: Metadata = {
   title: "Carrito | Tienda",
@@ -132,7 +133,7 @@ export default async function CarritoPage() {
                           </form>
                         </div>
                         <span className="font-semibold text-foreground">
-                          ${(unitPrice * item.quantity).toFixed(2)}
+                          {formatHNL(unitPrice * item.quantity)}
                         </span>
                       </div>
                     </div>
@@ -170,7 +171,7 @@ export default async function CarritoPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium text-foreground">
-                    ${subtotal.toFixed(2)}
+                    {formatHNL(subtotal)}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -183,7 +184,7 @@ export default async function CarritoPage() {
               <Separator className="my-4" />
               <div className="flex justify-between text-lg font-bold">
                 <span className="text-foreground">Total</span>
-                <span className="text-foreground">${subtotal.toFixed(2)}</span>
+                <span className="text-foreground">{formatHNL(subtotal)}</span>
               </div>
               <Button
                 asChild

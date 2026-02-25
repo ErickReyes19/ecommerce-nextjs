@@ -8,6 +8,7 @@ import { ProductImageGallery } from "@/src/components/ecommerce/product-image-ga
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { formatHNL } from "@/src/lib/currency";
 
 export async function generateMetadata({
   params,
@@ -134,12 +135,12 @@ export default async function ProductDetailPage({
           {/* Price */}
           <div className="flex items-baseline gap-3">
             <span className="text-3xl font-bold text-foreground">
-              ${price.toFixed(2)}
+              {formatHNL(price)}
             </span>
             {hasDiscount && comparePrice > price && (
               <>
                 <span className="text-xl text-muted-foreground line-through">
-                  ${comparePrice.toFixed(2)}
+                  {formatHNL(comparePrice)}
                 </span>
                 <Badge variant="destructive">
                   {`-${Math.round(((comparePrice - price) / comparePrice) * 100)}%`}
