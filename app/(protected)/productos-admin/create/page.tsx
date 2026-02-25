@@ -9,7 +9,7 @@ export default async function CreateProductoPage() {
   return (
     <div>
       <HeaderComponent Icon={PlusCircle} description="En este apartado podrás crear un producto" screenName="Crear Producto" />
-      <ProductoForm initialData={{ name: "", slug: "", description: "", sku: "", basePrice: 0, categoryId: "", brandId: null }} categorias={categorias} />
+      <ProductoForm initialData={{ name: "", slug: "", description: "", shortDescription: null, sku: "", basePrice: 0, compareAtPrice: null, salePrice: null, stock: 0, active: true, categoryId: "", brandId: null }} categorias={categorias} />
     </div>
   );
 }
