@@ -1,10 +1,34 @@
 import React from "react";
+import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
+import { StoreNavbar } from "@/src/components/ecommerce/store-navbar";
+import { StoreFooter } from "@/src/components/ecommerce/store-footer";
 
-const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+async function getCartCount() {
+  try {
+    const token = cookies().get("guest_cart")?.value;
+    if (!token) return 0;
+    const cart = await prisma.cart.findUnique({
+      where: { token },
+      include: { items: true },
+    });
+    return cart?.items.reduce((acc, item) => acc + item.quantity, 0) ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+const PublicLayout: React.FC<{ children: React.ReactNode }> = async ({
+  children,
+}) => {
+  const cartCount = await getCartCount();
+
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      {children}
-    </main>
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <StoreNavbar cartCount={cartCount} />
+      <main className="flex-1">{children}</main>
+      <StoreFooter />
+    </div>
   );
 };
 

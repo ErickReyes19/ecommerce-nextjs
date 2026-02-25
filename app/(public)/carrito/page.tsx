@@ -1,32 +1,200 @@
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import Image from "next/image";
+import { ShoppingBag, ArrowRight, Trash2 } from "lucide-react";
+import { removeCartItem } from "@/src/actions/cart-actions";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Carrito | Tienda",
+  description: "Revisa los productos en tu carrito de compras.",
+};
 
 export default async function CarritoPage() {
   const token = cookies().get("guest_cart")?.value;
   const cart = token
-    ? await prisma.cart.findUnique({ where: { token }, include: { items: { include: { product: true, variant: true } } } })
+    ? await prisma.cart.findUnique({
+        where: { token },
+        include: {
+          items: {
+            include: {
+              product: { include: { images: { where: { isMain: true }, take: 1 }, category: true } },
+              variant: true,
+            },
+          },
+        },
+      })
     : null;
 
-  const total = cart?.items.reduce((acc, item) => acc + Number(item.variant?.salePrice ?? item.variant?.price ?? item.product.basePrice) * item.quantity, 0) ?? 0;
+  const items = cart?.items ?? [];
+  const subtotal = items.reduce(
+    (acc, item) =>
+      acc +
+      Number(
+        item.variant?.salePrice ?? item.variant?.price ?? item.product.basePrice
+      ) *
+        item.quantity,
+    0
+  );
 
   return (
-    <main className="container mx-auto px-4 py-8 space-y-4">
-      <h1 className="text-3xl font-bold">Tu carrito</h1>
-      {cart?.items.length ? cart.items.map((item) => (
-        <div key={item.id} className="rounded-lg border p-4 flex justify-between">
-          <div>
-            <p className="font-semibold">{item.product.name}</p>
-            <p className="text-sm text-muted-foreground">Cantidad: {item.quantity}</p>
+    <div className="mx-auto max-w-4xl px-6 py-8">
+      <h1 className="mb-2 font-serif text-3xl font-bold tracking-tight text-foreground">
+        Tu carrito
+      </h1>
+      <p className="mb-8 text-sm text-muted-foreground">
+        {items.length} articulo{items.length !== 1 ? "s" : ""} en tu carrito
+      </p>
+
+      {items.length > 0 ? (
+        <div className="grid gap-8 lg:grid-cols-3">
+          {/* Items */}
+          <div className="space-y-4 lg:col-span-2">
+            {items.map((item) => {
+              const unitPrice = Number(
+                item.variant?.salePrice ??
+                  item.variant?.price ??
+                  item.product.basePrice
+              );
+              const image = item.product.images[0]?.url;
+
+              return (
+                <Card key={item.id} className="overflow-hidden border-border/50">
+                  <CardContent className="flex gap-4 p-4">
+                    {/* Thumbnail */}
+                    <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-secondary">
+                      {image ? (
+                        <Image
+                          src={image}
+                          alt={item.product.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center">
+                          <ShoppingBag className="h-8 w-8 text-muted-foreground/30" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex flex-1 flex-col justify-between">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          {item.product.category.name}
+                        </p>
+                        <Link
+                          href={`/productos/${item.product.slug}`}
+                          className="font-semibold text-foreground transition-colors hover:text-muted-foreground"
+                        >
+                          {item.product.name}
+                        </Link>
+                        {item.variant && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {item.variant.name}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Badge variant="secondary">
+                          Cant: {item.quantity}
+                        </Badge>
+                        <span className="font-semibold text-foreground">
+                          ${(unitPrice * item.quantity).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Remove */}
+                    <form
+                      action={async () => {
+                        "use server";
+                        await removeCartItem(item.id);
+                      }}
+                    >
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Eliminar</span>
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
-          <p>${(Number(item.variant?.salePrice ?? item.variant?.price ?? item.product.basePrice) * item.quantity).toFixed(2)}</p>
+
+          {/* Summary */}
+          <Card className="h-fit border-border/50">
+            <CardContent className="p-6">
+              <h2 className="mb-4 text-lg font-semibold text-foreground">
+                Resumen
+              </h2>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium text-foreground">
+                    ${subtotal.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Envio</span>
+                  <span className="text-muted-foreground">
+                    Calculado en checkout
+                  </span>
+                </div>
+              </div>
+              <Separator className="my-4" />
+              <div className="flex justify-between text-lg font-bold">
+                <span className="text-foreground">Total</span>
+                <span className="text-foreground">${subtotal.toFixed(2)}</span>
+              </div>
+              <Button
+                asChild
+                size="lg"
+                className="mt-6 w-full rounded-full"
+              >
+                <Link href="/checkout">
+                  Ir a checkout
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="mt-3 w-full rounded-full"
+              >
+                <Link href="/productos">Seguir comprando</Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
-      )) : <p>No hay items en tu carrito.</p>}
-      <div className="flex justify-between items-center">
-        <p className="text-xl font-semibold">Total: ${total.toFixed(2)}</p>
-        <Button asChild><Link href="/checkout">Ir a checkout</Link></Button>
-      </div>
-    </main>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <ShoppingBag className="mb-4 h-16 w-16 text-muted-foreground/30" />
+          <p className="text-lg font-semibold text-foreground">
+            Tu carrito esta vacio
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Explora nuestro catalogo y agrega productos.
+          </p>
+          <Button asChild className="mt-6 rounded-full" size="lg">
+            <Link href="/productos">
+              Explorar productos
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

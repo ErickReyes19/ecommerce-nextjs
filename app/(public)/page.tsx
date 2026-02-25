@@ -44,8 +44,21 @@ const uxModules = [
 ];
 
 export default async function LandingPage() {
-  const session = await getSession();
-  if (session) redirect("/mi-perfil");
+  const [categories, products] = await Promise.all([
+    prisma.category.findMany({
+      include: { _count: { select: { products: true } } },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.product.findMany({
+      where: { active: true },
+      include: {
+        category: true,
+        images: { where: { isMain: true }, take: 1 },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+    }),
+  ]);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30">
