@@ -4,6 +4,7 @@ import { getSession } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { formatHNL } from "@/src/lib/currency";
 import { getOrCreateEcommerceUserBySessionUserId } from "@/src/lib/ecommerce-user";
+import { getOrderStatusLabel } from "@/src/lib/order-status";
 
 export default async function PerfilPage({
   searchParams,
@@ -95,7 +96,7 @@ export default async function PerfilPage({
           user.orders.map((order) => (
             <article className="space-y-2 rounded border p-3" key={order.id}>
               <p className="font-medium">
-                {order.orderNumber} · {order.status} · {formatHNL(Number(order.grandTotal))}
+                {order.orderNumber} · {getOrderStatusLabel(order.status)} · {formatHNL(Number(order.grandTotal))}
               </p>
               <ul className="list-inside list-disc text-sm text-muted-foreground">
                 {order.items.map((item) => (

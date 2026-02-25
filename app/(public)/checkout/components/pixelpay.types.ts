@@ -20,6 +20,7 @@ export type PixelPayCheckoutProps = {
   defaultPhone: string;
   defaultAddress: string;
   defaultCity: string;
+  subtotal: number;
 };
 
 export type BillingData = {
