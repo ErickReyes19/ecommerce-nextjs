@@ -33,6 +33,17 @@ export default async function CheckoutPage() {
 
   const methods = await prisma.shippingMethod.findMany({ where: { active: true }, orderBy: { name: "asc" } });
 
+  const currentUser = await prisma.usuarios.findUnique({
+    where: { id: session.IdUser },
+    select: {
+      nombre: true,
+      email: true,
+      telefono: true,
+      direccion: true,
+      ciudad: true,
+    },
+  });
+
   const subtotal = cart.items.reduce(
     (acc, item) => acc + Number(item.variant?.salePrice ?? item.variant?.price ?? item.product.basePrice) * item.quantity,
     0,
@@ -44,6 +55,11 @@ export default async function CheckoutPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <PixelPayCheckout
           cartId={cart.id}
+          defaultCustomerName={currentUser?.nombre ?? session.Nombre ?? ""}
+          defaultCustomerEmail={currentUser?.email ?? ""}
+          defaultPhone={currentUser?.telefono ?? ""}
+          defaultAddress={currentUser?.direccion ?? ""}
+          defaultCity={currentUser?.ciudad ?? ""}
           shippingMethods={methods.map((method) => ({
             id: method.id,
             name: method.name,
