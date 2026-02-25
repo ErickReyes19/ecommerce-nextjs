@@ -39,7 +39,7 @@ const ecommerceAdminItems = [
   { title: "Productos", url: "/productos-admin" },
   { title: "Categorías", url: "/categorias" },
   { title: "Pedidos", url: "/pedidos" },
-  { title: "Usuarios", url: "/usuarios-admin" },
+  { title: "Usuarios", url: "/usuarios" },
   { title: "Cupones", url: "/cupones" },
   { title: "Reportes", url: "/reportes" },
 ];
