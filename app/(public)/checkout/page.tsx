@@ -1,12 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { createOrder } from "@/src/actions/order-actions";
 import { cookies } from "next/headers";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getSession } from "@/auth";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PixelPayCheckout } from "@/src/components/ecommerce/pixelpay-checkout";
+import { moneyFormatter } from "@/src/services/pixelpay.utils";
 
 export default async function CheckoutPage() {
   const session = await getSession();
@@ -44,48 +42,14 @@ export default async function CheckoutPage() {
     <main className="container mx-auto space-y-6 px-4 py-8">
       <h1 className="text-3xl font-bold">Checkout</h1>
       <div className="grid gap-6 lg:grid-cols-3">
-        <form
-          action={async (fd) => {
-            "use server";
-            await createOrder(
-              {
-                addressId: fd.get("addressId"),
-                shippingMethodId: fd.get("shippingMethodId"),
-                paymentMethod: fd.get("paymentMethod"),
-                couponCode: fd.get("couponCode"),
-              },
-              cart.id,
-            );
-          }}
-          className="grid gap-4 md:grid-cols-2 lg:col-span-2"
-        >
-          <Input name="addressId" placeholder="ID de dirección" required />
-          <Input name="couponCode" placeholder="Cupón (opcional)" />
-          <Select name="shippingMethodId">
-            <SelectTrigger>
-              <SelectValue placeholder="Método de envío" />
-            </SelectTrigger>
-            <SelectContent>
-              {methods.map((m) => (
-                <SelectItem key={m.id} value={m.id}>
-                  {m.name} - ${Number(m.price).toFixed(2)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select name="paymentMethod" defaultValue="stripe">
-            <SelectTrigger>
-              <SelectValue placeholder="Método de pago" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="stripe">Stripe</SelectItem>
-              <SelectItem value="paypal">PayPal</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button type="submit" className="md:col-span-2">
-            Confirmar pedido
-          </Button>
-        </form>
+        <PixelPayCheckout
+          cartId={cart.id}
+          shippingMethods={methods.map((method) => ({
+            id: method.id,
+            name: method.name,
+            price: Number(method.price),
+          }))}
+        />
 
         <Card>
           <CardHeader>
@@ -99,13 +63,13 @@ export default async function CheckoutPage() {
                   <p className="line-clamp-1 text-muted-foreground">
                     {item.product.name} x{item.quantity}
                   </p>
-                  <p className="font-medium">${(unit * item.quantity).toFixed(2)}</p>
+                  <p className="font-medium">{moneyFormatter("HNL", unit * item.quantity)}</p>
                 </div>
               );
             })}
-            <div className="border-t pt-2 flex items-center justify-between text-base font-semibold">
+            <div className="flex items-center justify-between border-t pt-2 text-base font-semibold">
               <span>Total</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{moneyFormatter("HNL", subtotal)}</span>
             </div>
           </CardContent>
         </Card>

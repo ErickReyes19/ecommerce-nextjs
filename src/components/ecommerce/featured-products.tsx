@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ShoppingBag } from "lucide-react";
+import { formatHNL } from "@/src/lib/currency";
 
 type FeaturedProduct = {
   id: string;
@@ -77,11 +78,11 @@ export function FeaturedProducts({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold text-foreground">
-                    ${product.basePrice.toFixed(2)}
+                    {formatHNL(product.basePrice)}
                   </span>
                   {product.compareAtPrice && (
                     <span className="text-sm text-muted-foreground line-through">
-                      ${product.compareAtPrice.toFixed(2)}
+                      {formatHNL(product.compareAtPrice)}
                     </span>
                   )}
                 </div>
