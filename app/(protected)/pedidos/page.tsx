@@ -1,20 +1,17 @@
-import Link from "next/link";
-import { deletePedido, getPedidos } from "./actions";
+import HeaderComponent from "@/components/HeaderComponent";
+import { ListCheck } from "lucide-react";
+import { getPedidos } from "./actions";
+import { columns } from "./components/columns";
+import { DataTable } from "./components/data-table";
+import PedidosListMobile from "./components/pedidos-list-mobile";
 
 export default async function AdminPedidosPage() {
-  const orders = await getPedidos();
+  const pedidos = await getPedidos();
   return (
-    <main className="space-y-3">
-      <Link href="/pedidos/create" className="underline">Nuevo pedido</Link>
-      {orders.map((o) => (
-        <div key={o.id} className="rounded border p-3 flex items-center justify-between">
-          <div>{o.orderNumber} · {o.status} · ${Number(o.grandTotal).toFixed(2)}</div>
-          <div className="flex gap-2">
-            <Link href={`/pedidos/${o.id}/edit`} className="underline">Editar</Link>
-            <form action={deletePedido.bind(null, o.id)}><button className="underline" type="submit">Eliminar</button></form>
-          </div>
-        </div>
-      ))}
-    </main>
+    <div className="container mx-auto py-2">
+      <HeaderComponent Icon={ListCheck} description="En este apartado podrá ver todos los pedidos" screenName="Pedidos" />
+      <div className="hidden md:block"><DataTable columns={columns} data={pedidos} /></div>
+      <div className="block md:hidden"><PedidosListMobile pedidos={pedidos} /></div>
+    </div>
   );
 }

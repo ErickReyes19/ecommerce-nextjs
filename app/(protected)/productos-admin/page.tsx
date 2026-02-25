@@ -1,13 +1,19 @@
-import Link from "next/link";
-import { deleteProduct, getProductos } from "./actions";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import HeaderComponent from "@/components/HeaderComponent";
+import { ListCheck } from "lucide-react";
+import { getProductos } from "./actions";
+import { columns } from "./components/columns";
+import { DataTable } from "./components/data-table";
+import ProductosListMobile from "./components/productos-list-mobile";
 
 export default async function AdminProductosPage() {
-  const products = await getProductos();
+  const productos = await getProductos();
+  const data = productos.map((producto) => ({ ...producto, categoryName: producto.category.name }));
+
   return (
-    <main className="space-y-3">
-      <Link href="/productos-admin/create" className="underline">Nuevo producto</Link>
-      <Table><TableHeader><TableRow><TableHead>Producto</TableHead><TableHead>SKU</TableHead><TableHead>Categoría</TableHead><TableHead>Acciones</TableHead></TableRow></TableHeader><TableBody>{products.map((p) => <TableRow key={p.id}><TableCell>{p.name}</TableCell><TableCell>{p.sku}</TableCell><TableCell>{p.category.name}</TableCell><TableCell><div className="flex gap-2"><Link href={`/productos-admin/${p.id}/edit`} className="underline">Editar</Link><form action={deleteProduct.bind(null, p.id)}><button className="underline" type="submit">Eliminar</button></form></div></TableCell></TableRow>)}</TableBody></Table>
-    </main>
+    <div className="container mx-auto py-2">
+      <HeaderComponent Icon={ListCheck} description="En este apartado podrá ver todos los productos" screenName="Productos" />
+      <div className="hidden md:block"><DataTable columns={columns} data={data} /></div>
+      <div className="block md:hidden"><ProductosListMobile productos={data} /></div>
+    </div>
   );
 }
