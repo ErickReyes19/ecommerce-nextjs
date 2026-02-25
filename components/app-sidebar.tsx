@@ -35,13 +35,13 @@ const items = [
 ];
 
 const ecommerceAdminItems = [
-  { title: "Dashboard", url: "/admin/dashboard" },
-  { title: "Productos", url: "/admin/productos" },
-  { title: "Categorías", url: "/admin/categorias" },
-  { title: "Pedidos", url: "/admin/pedidos" },
-  { title: "Usuarios", url: "/admin/usuarios" },
-  { title: "Cupones", url: "/admin/cupones" },
-  { title: "Reportes", url: "/admin/reportes" },
+  { title: "Dashboard", url: "/protected/dashboard" },
+  { title: "Productos", url: "/protected/productos" },
+  { title: "Categorías", url: "/protected/categorias" },
+  { title: "Pedidos", url: "/protected/pedidos" },
+  { title: "Usuarios", url: "/protected/usuarios" },
+  { title: "Cupones", url: "/protected/cupones" },
+  { title: "Reportes", url: "/protected/reportes" },
 ];
 
 export async function AppSidebar() {
@@ -90,7 +90,7 @@ export async function AppSidebar() {
               {usuario?.Rol === "ADMIN" && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <Link href="/admin/dashboard">
+                    <Link href="/protected/dashboard">
                       <LayersIcon size={16} className="p-0" />
                       <span>Backoffice Ecommerce</span>
                     </Link>

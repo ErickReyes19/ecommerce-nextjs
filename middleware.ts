@@ -25,11 +25,11 @@ export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
   const sessionCookie = req.cookies.get("next-auth.session-token") ?? req.cookies.get("__Secure-next-auth.session-token") ?? req.cookies.get("session");
 
-  if ((path.startsWith("/checkout") || path.startsWith("/admin")) && !sessionCookie) {
+  if ((path.startsWith("/checkout") || path.startsWith("/protected")) && !sessionCookie) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  if (path.startsWith("/admin") && req.cookies.get("role")?.value !== "ADMIN") {
+  if (path.startsWith("/protected") && req.cookies.get("role")?.value !== "ADMIN") {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
@@ -37,5 +37,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/checkout/:path*", "/api/:path*"],
+  matcher: ["/protected/:path*", "/checkout/:path*", "/api/:path*"],
 };
