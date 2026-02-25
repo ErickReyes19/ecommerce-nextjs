@@ -66,6 +66,7 @@ export default async function CheckoutPage() {
             name: method.name,
             price: Number(method.price),
           }))}
+          subtotal={subtotal}
         />
 
         <Card>

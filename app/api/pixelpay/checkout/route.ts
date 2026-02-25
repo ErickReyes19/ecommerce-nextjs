@@ -34,6 +34,11 @@ type PaymentMetadata = {
   providerResult?: PixelPayResult;
 };
 
+type CouponContext = {
+  subtotal: number;
+  items: Array<{ productId: string; categoryId: string | null; lineTotal: number }>;
+};
+
 function parseHttpCode(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string") {
@@ -86,6 +91,108 @@ function verifyPaymentHash(result: PixelPayResult | undefined, reference: string
   return service.verifyPaymentHash(paymentHash, reference, keyHash);
 }
 
+async function calculateDiscount(couponCode: string | undefined, context: CouponContext) {
+  if (!couponCode?.trim()) {
+    return { couponId: null as string | null, discountTotal: 0, couponCode: null as string | null };
+  }
+
+  const coupon = await prisma.coupon.findUnique({
+    where: { code: couponCode.trim().toUpperCase() },
+    select: {
+      id: true,
+      code: true,
+      type: true,
+      target: true,
+      value: true,
+      maxDiscount: true,
+      minSubtotal: true,
+      startsAt: true,
+      endsAt: true,
+      usageLimit: true,
+      usedCount: true,
+      active: true,
+      productId: true,
+      categoryId: true,
+    },
+  });
+
+  if (!coupon || !coupon.active) return { couponId: null, discountTotal: 0, couponCode: null };
+
+  const now = new Date();
+  if ((coupon.startsAt && coupon.startsAt > now) || (coupon.endsAt && coupon.endsAt < now)) return { couponId: null, discountTotal: 0, couponCode: null };
+  if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) return { couponId: null, discountTotal: 0, couponCode: null };
+  if (coupon.minSubtotal && context.subtotal < Number(coupon.minSubtotal)) return { couponId: null, discountTotal: 0, couponCode: null };
+
+  let discountBase = context.subtotal;
+  if (coupon.target === "PRODUCT" && coupon.productId) {
+    discountBase = context.items.filter((item) => item.productId === coupon.productId).reduce((acc, item) => acc + item.lineTotal, 0);
+  }
+  if (coupon.target === "CATEGORY" && coupon.categoryId) {
+    discountBase = context.items.filter((item) => item.categoryId === coupon.categoryId).reduce((acc, item) => acc + item.lineTotal, 0);
+  }
+
+  if (discountBase <= 0) return { couponId: null, discountTotal: 0, couponCode: null };
+
+  let discountTotal = coupon.type === "PERCENTAGE" ? (discountBase * Number(coupon.value)) / 100 : Number(coupon.value);
+  if (coupon.maxDiscount) {
+    discountTotal = Math.min(discountTotal, Number(coupon.maxDiscount));
+  }
+  discountTotal = Math.max(0, Math.min(discountTotal, discountBase));
+
+  return { couponId: coupon.id, couponCode: coupon.code, discountTotal };
+}
+
+export async function GET(request: Request) {
+  const session = await getSession();
+  if (!session?.IdUser) {
+    return NextResponse.json({ ok: false, message: "Sesión inválida" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const cartId = searchParams.get("cartId") ?? "";
+  const shippingMethodId = searchParams.get("shippingMethodId") ?? "";
+  const couponCode = searchParams.get("couponCode") ?? undefined;
+
+  if (!cartId || !shippingMethodId) {
+    return NextResponse.json({ ok: false, message: "Faltan datos para calcular totales" }, { status: 400 });
+  }
+
+  const cart = await prisma.cart.findUnique({
+    where: { id: cartId },
+    include: { items: { include: { product: { select: { basePrice: true, categoryId: true } }, variant: true } } },
+  });
+
+  const shippingMethod = await prisma.shippingMethod.findUnique({ where: { id: shippingMethodId } });
+  if (!cart || !shippingMethod || !shippingMethod.active) {
+    return NextResponse.json({ ok: false, message: "No se pudo calcular el total" }, { status: 404 });
+  }
+
+  const lines = cart.items.map((item) => {
+    const unitPrice = Number(item.variant?.salePrice ?? item.variant?.price ?? item.product.basePrice);
+    return {
+      productId: item.productId,
+      categoryId: item.product.categoryId,
+      lineTotal: unitPrice * item.quantity,
+    };
+  });
+
+  const subtotal = lines.reduce((acc, item) => acc + item.lineTotal, 0);
+  const shippingTotal = Number(shippingMethod.price);
+  const discount = await calculateDiscount(couponCode, { subtotal, items: lines });
+  const grandTotal = Math.max(0, subtotal + shippingTotal - discount.discountTotal);
+
+  return NextResponse.json({
+    ok: true,
+    totals: {
+      subtotal,
+      shippingTotal,
+      discountTotal: discount.discountTotal,
+      grandTotal,
+      appliedCouponCode: discount.couponCode,
+    },
+  });
+}
+
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session?.IdUser) {
@@ -97,6 +204,7 @@ export async function POST(request: Request) {
     shippingMethodId?: string;
     addressId?: string;
     shippingPrice?: number;
+    couponCode?: string;
   };
 
   if (!body.cartId || !body.shippingMethodId) {
@@ -121,15 +229,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: "Método de envío no disponible" }, { status: 404 });
   }
 
-  const subtotal = cart.items.reduce(
-    (acc, item) => acc + Number(item.variant?.salePrice ?? item.variant?.price ?? item.product.basePrice) * item.quantity,
-    0,
-  );
-  const shippingTotal =
-    typeof body.shippingPrice === "number" && Number.isFinite(body.shippingPrice) && body.shippingPrice >= 0
-      ? body.shippingPrice
-      : Number(shippingMethod.price);
-  const grandTotal = subtotal + shippingTotal;
+  const lines = cart.items.map((item) => {
+    const unitPrice = Number(item.variant?.salePrice ?? item.variant?.price ?? item.product.basePrice);
+    return {
+      productId: item.productId,
+      categoryId: item.product.categoryId,
+      lineTotal: unitPrice * item.quantity,
+    };
+  });
+  const subtotal = lines.reduce((acc, item) => acc + item.lineTotal, 0);
+  const shippingTotal = Number(shippingMethod.price);
+  const discount = await calculateDiscount(body.couponCode, { subtotal, items: lines });
+  const grandTotal = Math.max(0, subtotal + shippingTotal - discount.discountTotal);
 
   const reference = `PIX-${Date.now()}`;
   const ecommerceUser = await getOrCreateEcommerceUserBySessionUserId(session.IdUser);
@@ -141,8 +252,10 @@ export async function POST(request: Request) {
       userId: ecommerceUser?.id,
       addressId: body.addressId,
       subtotal,
+      discountTotal: discount.discountTotal,
       shippingTotal,
       grandTotal,
+      couponId: discount.couponId,
       items: {
         create: cart.items.map((item) => {
           const unitPrice = Number(item.variant?.salePrice ?? item.variant?.price ?? item.product.basePrice);

@@ -9,6 +9,7 @@ const links = [
   ["Pedidos", "/pedidos"],
   ["Usuarios", "/usuarios"],
   ["Cupones", "/cupones"],
+  ["Métodos de envío", "/metodos-envio"],
   ["Reportes", "/reportes"],
 ];
 

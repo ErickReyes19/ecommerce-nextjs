@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, useMemo, useState, useTransition } from "react";
+import { FormEvent, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Locations from "@pixelpay/sdk-core/lib/resources/Locations";
@@ -23,6 +23,7 @@ export function PixelPayCheckout({
   defaultPhone,
   defaultAddress,
   defaultCity,
+  subtotal,
 }: PixelPayCheckoutProps) {
   const normalizeLocationMap = (value: unknown): Record<string, string> => {
     if (!value || typeof value !== "object") return {};
@@ -38,6 +39,13 @@ export function PixelPayCheckout({
   const [isPending, startTransition] = useTransition();
   const [shippingMethodId, setShippingMethodId] = useState<string>(shippingMethods[0]?.id ?? "");
   const [shippingPrice, setShippingPrice] = useState<number>(shippingMethods[0]?.price ?? 0);
+  const [totals, setTotals] = useState({
+    subtotal,
+    shippingTotal: shippingPrice,
+    discountTotal: 0,
+    grandTotal: subtotal + shippingPrice,
+    appliedCouponCode: null as string | null,
+  });
 
   const selectedShipping = useMemo(
     () => shippingMethods.find((method) => method.id === shippingMethodId),
@@ -69,6 +77,24 @@ export function PixelPayCheckout({
     billing_country: "HN",
     billing_postal_code: "11101",
   });
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const run = async () => {
+      if (!shippingMethodId) return;
+      const params = new URLSearchParams({ cartId, shippingMethodId });
+      if (form.couponCode.trim()) params.set("couponCode", form.couponCode.trim());
+
+      const response = await fetch(`/api/pixelpay/checkout?${params.toString()}`, { signal: controller.signal });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) return;
+      setShippingPrice(Number(payload.totals.shippingTotal));
+      setTotals(payload.totals);
+    };
+
+    run().catch(() => null);
+    return () => controller.abort();
+  }, [cartId, shippingMethodId, form.couponCode]);
 
   const departments = useMemo(() => {
     const stateMap = normalizeLocationMap(Locations.statesList(form.billing_country));
@@ -156,15 +182,17 @@ export function PixelPayCheckout({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Precio de envío</Label>
-              <Input
-                type="number"
-                min={0}
-                step="0.01"
-                value={shippingPrice}
-                onChange={(event) => setShippingPrice(Number(event.target.value) || 0)}
-              />
+            <div className="space-y-2 rounded-md border bg-muted/30 p-3 text-sm">
+              <p className="font-medium">Totales</p>
+              <div className="flex items-center justify-between text-muted-foreground"><span>Subtotal</span><span>{moneyFormatter("HNL", totals.subtotal)}</span></div>
+              <div className="flex items-center justify-between text-muted-foreground"><span>Envío</span><span>{moneyFormatter("HNL", totals.shippingTotal)}</span></div>
+              <div className="space-y-1">
+                <Label htmlFor="coupon">Cupón</Label>
+                <Input id="coupon" value={form.couponCode} placeholder="Ej: BIENVENIDA10" onChange={(e) => setForm((prev) => ({ ...prev, couponCode: e.target.value.toUpperCase() }))} />
+              </div>
+              <div className="flex items-center justify-between text-emerald-700"><span>Descuento</span><span>- {moneyFormatter("HNL", totals.discountTotal)}</span></div>
+              <div className="flex items-center justify-between border-t pt-2 text-base font-semibold"><span>Total</span><span>{moneyFormatter("HNL", totals.grandTotal)}</span></div>
+              {totals.appliedCouponCode ? <p className="text-xs text-emerald-700">Cupón aplicado: {totals.appliedCouponCode}</p> : null}
             </div>
           </div>
 
@@ -180,22 +208,10 @@ export function PixelPayCheckout({
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
               <p className="text-sm font-medium text-muted-foreground">Datos del titular</p>
-              <div className="space-y-2">
-                <Label>Nombre</Label>
-                <Input value={form.billing_name} onChange={(e) => setForm((prev) => ({ ...prev, billing_name: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Apellido</Label>
-                <Input value={form.billing_last_name} onChange={(e) => setForm((prev) => ({ ...prev, billing_last_name: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input type="email" value={form.billing_email} onChange={(e) => setForm((prev) => ({ ...prev, billing_email: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Teléfono</Label>
-                <Input value={form.billing_phone} onChange={(e) => setForm((prev) => ({ ...prev, billing_phone: e.target.value }))} />
-              </div>
+              <div className="space-y-2"><Label>Nombre</Label><Input value={form.billing_name} onChange={(e) => setForm((prev) => ({ ...prev, billing_name: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Apellido</Label><Input value={form.billing_last_name} onChange={(e) => setForm((prev) => ({ ...prev, billing_last_name: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Email</Label><Input type="email" value={form.billing_email} onChange={(e) => setForm((prev) => ({ ...prev, billing_email: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Teléfono</Label><Input value={form.billing_phone} onChange={(e) => setForm((prev) => ({ ...prev, billing_phone: e.target.value }))} /></div>
             </div>
 
             <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
@@ -208,27 +224,12 @@ export function PixelPayCheckout({
                   <Image src="/images/pixelpay.png" alt="PixelPay" width={120} height={32} className="h-8 w-auto" />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Nombre en tarjeta</Label>
-                <Input value={form.card_holder} onChange={(e) => setForm((prev) => ({ ...prev, card_holder: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Número de tarjeta</Label>
-                <Input value={form.card_number} onChange={(e) => setForm((prev) => ({ ...prev, card_number: e.target.value }))} inputMode="numeric" maxLength={19} />
-              </div>
+              <div className="space-y-2"><Label>Nombre en tarjeta</Label><Input placeholder="Como aparece en la tarjeta" value={form.card_holder} onChange={(e) => setForm((prev) => ({ ...prev, card_holder: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Número de tarjeta</Label><Input placeholder="0000 0000 0000 0000" value={form.card_number} onChange={(e) => setForm((prev) => ({ ...prev, card_number: e.target.value }))} inputMode="numeric" maxLength={19} /></div>
               <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-2">
-                  <Label>Mes (MM)</Label>
-                  <Input value={form.card_exp_month} onChange={(e) => setForm((prev) => ({ ...prev, card_exp_month: e.target.value }))} inputMode="numeric" maxLength={2} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Año (YY)</Label>
-                  <Input value={form.card_exp_year} onChange={(e) => setForm((prev) => ({ ...prev, card_exp_year: e.target.value }))} inputMode="numeric" maxLength={2} />
-                </div>
-                <div className="space-y-2">
-                  <Label>CVV</Label>
-                  <Input value={form.card_cvv} onChange={(e) => setForm((prev) => ({ ...prev, card_cvv: e.target.value }))} inputMode="numeric" maxLength={4} />
-                </div>
+                <div className="space-y-2"><Label>Mes (MM)</Label><Input placeholder="08" value={form.card_exp_month} onChange={(e) => setForm((prev) => ({ ...prev, card_exp_month: e.target.value }))} inputMode="numeric" maxLength={2} /></div>
+                <div className="space-y-2"><Label>Año (YY)</Label><Input placeholder="29" value={form.card_exp_year} onChange={(e) => setForm((prev) => ({ ...prev, card_exp_year: e.target.value }))} inputMode="numeric" maxLength={2} /></div>
+                <div className="space-y-2"><Label>CVV</Label><Input placeholder="123" value={form.card_cvv} onChange={(e) => setForm((prev) => ({ ...prev, card_cvv: e.target.value }))} inputMode="numeric" maxLength={4} /></div>
               </div>
             </div>
           </div>
@@ -236,57 +237,23 @@ export function PixelPayCheckout({
           <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
             <p className="text-sm font-medium text-muted-foreground">Dirección de facturación</p>
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2 md:col-span-2">
-                <Label>Dirección</Label>
-                <Input value={form.billing_street} onChange={(e) => setForm((prev) => ({ ...prev, billing_street: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Ciudad</Label>
-                <Input value={form.billing_city} onChange={(e) => setForm((prev) => ({ ...prev, billing_city: e.target.value }))} />
-              </div>
+              <div className="space-y-2 md:col-span-2"><Label>Dirección</Label><Input value={form.billing_street} onChange={(e) => setForm((prev) => ({ ...prev, billing_street: e.target.value }))} /></div>
+              <div className="space-y-2"><Label>Ciudad</Label><Input value={form.billing_city} onChange={(e) => setForm((prev) => ({ ...prev, billing_city: e.target.value }))} /></div>
               <div className="space-y-2">
                 <Label>Departamento / Estado</Label>
                 <Select value={form.billing_state} onValueChange={(value) => setForm((prev) => ({ ...prev, billing_state: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un departamento" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((department) => (
-                      <SelectItem key={department.code} value={department.code}>
-                        {department.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectTrigger><SelectValue placeholder="Selecciona un departamento" /></SelectTrigger>
+                  <SelectContent>{departments.map((department) => <SelectItem key={department.code} value={department.code}>{department.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>País</Label>
-                <Select
-                  value={form.billing_country}
-                  onValueChange={(value) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      billing_country: value,
-                      billing_state: "",
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un país" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((country) => (
-                      <SelectItem key={country.code} value={country.code}>
-                        {country.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                <Select value={form.billing_country} onValueChange={(value) => setForm((prev) => ({ ...prev, billing_country: value, billing_state: "" }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecciona un país" /></SelectTrigger>
+                  <SelectContent>{countries.map((country) => <SelectItem key={country.code} value={country.code}>{country.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Código postal</Label>
-                <Input value={form.billing_postal_code} onChange={(e) => setForm((prev) => ({ ...prev, billing_postal_code: e.target.value }))} />
-              </div>
+              <div className="space-y-2"><Label>Código postal</Label><Input value={form.billing_postal_code} onChange={(e) => setForm((prev) => ({ ...prev, billing_postal_code: e.target.value }))} /></div>
             </div>
           </div>
 
