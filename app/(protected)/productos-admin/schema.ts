@@ -11,6 +11,8 @@ export const productSchema = z.object({
   compareAtPrice: z.coerce.number().positive().optional().nullable(),
   salePrice: z.coerce.number().positive().optional().nullable(),
   stock: z.coerce.number().int().min(0),
+  defaultVariantName: z.string().min(3).default("Variante Base"),
+  defaultVariantWeight: z.coerce.number().positive().optional().nullable(),
   active: z.boolean().default(true),
   categoryId: z.string().min(1),
   brandId: z.string().optional().nullable(),

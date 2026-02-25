@@ -5,7 +5,7 @@ import { productSchema, ProductInput } from "./schema";
 import { revalidatePath } from "next/cache";
 
 export async function getProductos() {
-  return prisma.product.findMany({ include: { category: true }, orderBy: { createdAt: "desc" }, take: 50 });
+  return prisma.product.findMany({ include: { category: true, brand: true }, orderBy: { createdAt: "desc" }, take: 50 });
 }
 
 export async function getProductoById(id: string) {
@@ -29,10 +29,11 @@ export async function createProduct(data: ProductInput) {
       variants: {
         create: {
           sku: `${parsed.sku}-DEFAULT`,
-          name: "Variante Base",
+          name: parsed.defaultVariantName,
           price: parsed.basePrice,
           salePrice: parsed.salePrice || null,
           stock: parsed.stock,
+          weight: parsed.defaultVariantWeight || null,
           isDefault: true,
         },
       },
@@ -70,10 +71,11 @@ export async function updateProduct(data: ProductInput) {
             where: { id: defaultVariant.id },
             data: {
               sku: `${parsed.sku}-DEFAULT`,
-              name: "Variante Base",
+              name: parsed.defaultVariantName,
               price: parsed.basePrice,
               salePrice: parsed.salePrice || null,
               stock: parsed.stock,
+              weight: parsed.defaultVariantWeight || null,
               isDefault: true,
             },
           },
@@ -81,10 +83,11 @@ export async function updateProduct(data: ProductInput) {
         : {
           create: {
             sku: `${parsed.sku}-DEFAULT`,
-            name: "Variante Base",
+            name: parsed.defaultVariantName,
             price: parsed.basePrice,
             salePrice: parsed.salePrice || null,
             stock: parsed.stock,
+            weight: parsed.defaultVariantWeight || null,
             isDefault: true,
           },
         },

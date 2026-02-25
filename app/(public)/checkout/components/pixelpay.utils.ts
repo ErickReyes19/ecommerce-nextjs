@@ -1,4 +1,4 @@
-import { BillingData, CardData, InitCheckoutPayload } from "@/src/services/pixelpay.types";
+import { BillingData, CardData, InitCheckoutPayload } from "./pixelpay.types";
 
 export function validateCheckoutInput(input: {
   checkout: InitCheckoutPayload;

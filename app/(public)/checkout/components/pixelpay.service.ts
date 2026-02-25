@@ -1,27 +1,41 @@
 "use client";
 
-import Settings from "@pixelpay/sdk-core/lib/models/Settings";
-import OrderModel from "@pixelpay/sdk-core/lib/models/Order";
-import ItemModel from "@pixelpay/sdk-core/lib/models/Item";
-import CardModel from "@pixelpay/sdk-core/lib/models/Card";
+import type ResponseModel from "@pixelpay/sdk-core/lib/base/Response";
 import BillingModel from "@pixelpay/sdk-core/lib/models/Billing";
+import CardModel from "@pixelpay/sdk-core/lib/models/Card";
+import ItemModel from "@pixelpay/sdk-core/lib/models/Item";
+import OrderModel from "@pixelpay/sdk-core/lib/models/Order";
+import Settings from "@pixelpay/sdk-core/lib/models/Settings";
 import SaleTransactionModel from "@pixelpay/sdk-core/lib/requests/SaleTransaction";
 import TransactionService from "@pixelpay/sdk-core/lib/services/Transaction";
-import type ResponseModel from "@pixelpay/sdk-core/lib/base/Response";
-import {
-  BillingData,
-  CardData,
-  InitCheckoutPayload,
-  InitResponse,
-  PixelPayApiResponse,
-} from "@/src/services/pixelpay.types";
-import { validateCheckoutInput } from "@/src/services/pixelpay.utils";
+import { BillingData, CardData, InitCheckoutPayload, InitResponse, PixelPayApiResponse } from "./pixelpay.types";
+import { validateCheckoutInput } from "./pixelpay.utils";
+
+function parseHttpCode(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
 
 function isApprovedPayment(result: PixelPayApiResponse | undefined) {
-  const status = Number(result?.status ?? result?.statusCode ?? result?.code);
-  const success = result?.success === true;
-  const approved = result?.data?.response_approved === true;
-  return (Number.isFinite(status) ? status >= 200 && status < 300 : false) && success && approved;
+  const httpCode =
+    parseHttpCode(result?.httpCode) ??
+    parseHttpCode(result?.statusCode) ??
+    parseHttpCode(result?.code) ??
+    parseHttpCode(result?.status);
+
+  if (httpCode !== 200) {
+    return false;
+  }
+
+  if (result?.data?.response_approved === false) {
+    return false;
+  }
+
+  return true;
 }
 
 function normalizeResponse(response: ResponseModel): PixelPayApiResponse {
