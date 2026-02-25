@@ -22,7 +22,7 @@ export async function createCategoria(data: CategoriaInput) {
       parentId: parsed.parentId || null,
     },
   });
-  revalidatePath("/protected/categorias");
+  revalidatePath("/categorias");
 }
 
 export async function updateCategoria(data: CategoriaInput) {
@@ -37,10 +37,10 @@ export async function updateCategoria(data: CategoriaInput) {
       parentId: parsed.parentId || null,
     },
   });
-  revalidatePath("/protected/categorias");
+  revalidatePath("/categorias");
 }
 
 export async function deleteCategoria(id: string) {
   await prisma.category.delete({ where: { id } });
-  revalidatePath("/protected/categorias");
+  revalidatePath("/categorias");
 }

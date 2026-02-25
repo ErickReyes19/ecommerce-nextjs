@@ -16,7 +16,7 @@ export function EcommerceUsuarioForm({ initialData, roles }: { initialData: Ecom
     e.preventDefault();
     if (isUpdate) await updateEcommerceUsuario(form);
     else await createEcommerceUsuario(form);
-    router.push("/protected/usuarios");
+    router.push("/usuarios-admin");
     router.refresh();
   }
 

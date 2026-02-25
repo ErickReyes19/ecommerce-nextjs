@@ -3,13 +3,13 @@ import { ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 
 const links = [
-  ["Dashboard", "/protected/dashboard"],
-  ["Productos", "/protected/productos"],
-  ["Categorías", "/protected/categorias"],
-  ["Pedidos", "/protected/pedidos"],
-  ["Usuarios", "/protected/usuarios"],
-  ["Cupones", "/protected/cupones"],
-  ["Reportes", "/protected/reportes"],
+  ["Dashboard", "/dashboard"],
+  ["Productos", "/productos-admin"],
+  ["Categorías", "/categorias"],
+  ["Pedidos", "/pedidos"],
+  ["Usuarios", "/usuarios-admin"],
+  ["Cupones", "/cupones"],
+  ["Reportes", "/reportes"],
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {

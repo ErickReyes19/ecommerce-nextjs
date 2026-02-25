@@ -23,7 +23,7 @@ export async function createCupon(data: CuponInput) {
       active: parsed.active,
     },
   });
-  revalidatePath("/protected/cupones");
+  revalidatePath("/cupones");
 }
 
 export async function updateCupon(data: CuponInput) {
@@ -39,10 +39,10 @@ export async function updateCupon(data: CuponInput) {
       active: parsed.active,
     },
   });
-  revalidatePath("/protected/cupones");
+  revalidatePath("/cupones");
 }
 
 export async function deleteCupon(id: string) {
   await prisma.coupon.delete({ where: { id } });
-  revalidatePath("/protected/cupones");
+  revalidatePath("/cupones");
 }
