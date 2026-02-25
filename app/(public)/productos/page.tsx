@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/src/components/ecommerce/product-card";
 import { ProductFilters } from "@/src/components/ecommerce/product-filters";
+import { SortSelect } from "@/src/components/ecommerce/sort-select";
 import type { Prisma } from "@/lib/generated/prisma";
 import type { Metadata } from "next";
 
@@ -161,27 +162,5 @@ export default async function ProductosPage({
         </div>
       </div>
     </div>
-  );
-}
-
-function SortSelect({ current }: { current: string }) {
-  return (
-    <form>
-      <select
-        name="orden"
-        defaultValue={current}
-        onChange={(e) => {
-          const url = new URL(window.location.href);
-          url.searchParams.set("orden", e.target.value);
-          window.location.href = url.toString();
-        }}
-        className="h-9 rounded-lg border border-input bg-background px-3 text-sm text-foreground"
-      >
-        <option value="reciente">Mas recientes</option>
-        <option value="precio-asc">Precio: menor a mayor</option>
-        <option value="precio-desc">Precio: mayor a menor</option>
-        <option value="nombre">Nombre A-Z</option>
-      </select>
-    </form>
   );
 }

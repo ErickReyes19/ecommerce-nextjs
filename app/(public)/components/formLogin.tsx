@@ -24,7 +24,7 @@ function LoginSubmitButton() {
   );
 }
 
-export default function Login() {
+export default function Login({ callbackUrl }: { callbackUrl?: string }) {
   const router = useRouter();
   const [openForgot, setOpenForgot] = useState(false);
   const [openRegister, setOpenRegister] = useState(false);
@@ -64,6 +64,7 @@ export default function Login() {
     <>
       <div className="space-y-4">
         <form action={loginAction} className="space-y-3 rounded-md border p-4">
+          <input type="hidden" name="callbackUrl" value={callbackUrl ?? ""} />
           <div className="space-y-1">
             <label htmlFor="identifier" className="text-sm font-medium">
               Usuario o correo

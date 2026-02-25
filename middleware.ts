@@ -26,7 +26,9 @@ export function middleware(req: NextRequest) {
   const sessionCookie = req.cookies.get("next-auth.session-token") ?? req.cookies.get("__Secure-next-auth.session-token") ?? req.cookies.get("session");
 
   if ((path.startsWith("/checkout") || path.startsWith("/protected")) && !sessionCookie) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    const loginUrl = new URL("/login", req.url);
+    loginUrl.searchParams.set("callbackUrl", path + req.nextUrl.search);
+    return NextResponse.redirect(loginUrl);
   }
 
   if (path.startsWith("/protected") && req.cookies.get("role")?.value !== "ADMIN") {
