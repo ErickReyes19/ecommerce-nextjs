@@ -16,7 +16,7 @@ export function PedidoForm({ initialData }: { initialData: PedidoInput }) {
     e.preventDefault();
     if (isUpdate) await updatePedido(form);
     else await createPedido(form);
-    router.push("/protected/pedidos");
+    router.push("/pedidos");
     router.refresh();
   }
 

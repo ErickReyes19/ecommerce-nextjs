@@ -25,7 +25,7 @@ export async function createProduct(data: ProductInput) {
       brandId: parsed.brandId || null,
     },
   });
-  revalidatePath("/protected/productos");
+  revalidatePath("/productos-admin");
   return { ok: true };
 }
 
@@ -44,10 +44,10 @@ export async function updateProduct(data: ProductInput) {
       brandId: parsed.brandId || null,
     },
   });
-  revalidatePath("/protected/productos");
+  revalidatePath("/productos-admin");
 }
 
 export async function deleteProduct(id: string) {
   await prisma.product.delete({ where: { id } });
-  revalidatePath("/protected/productos");
+  revalidatePath("/productos-admin");
 }

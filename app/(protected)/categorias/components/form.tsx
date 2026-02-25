@@ -16,7 +16,7 @@ export function CategoriaForm({ initialData, categorias }: { initialData: Catego
     e.preventDefault();
     if (isUpdate) await updateCategoria(form);
     else await createCategoria(form);
-    router.push("/protected/categorias");
+    router.push("/categorias");
     router.refresh();
   }
 

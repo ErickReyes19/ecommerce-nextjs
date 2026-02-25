@@ -16,7 +16,7 @@ export function CuponForm({ initialData }: { initialData: CuponInput }) {
     e.preventDefault();
     if (isUpdate) await updateCupon(form);
     else await createCupon(form);
-    router.push("/protected/cupones");
+    router.push("/cupones");
     router.refresh();
   }
 

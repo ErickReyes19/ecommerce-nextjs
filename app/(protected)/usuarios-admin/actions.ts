@@ -21,7 +21,7 @@ export async function createEcommerceUsuario(data: EcommerceUsuarioInput) {
       roleId: parsed.roleId || null,
     },
   });
-  revalidatePath("/protected/usuarios");
+  revalidatePath("/usuarios-admin");
 }
 
 export async function updateEcommerceUsuario(data: EcommerceUsuarioInput) {
@@ -35,10 +35,10 @@ export async function updateEcommerceUsuario(data: EcommerceUsuarioInput) {
       roleId: parsed.roleId || null,
     },
   });
-  revalidatePath("/protected/usuarios");
+  revalidatePath("/usuarios-admin");
 }
 
 export async function deleteEcommerceUsuario(id: string) {
   await prisma.user.delete({ where: { id } });
-  revalidatePath("/protected/usuarios");
+  revalidatePath("/usuarios-admin");
 }

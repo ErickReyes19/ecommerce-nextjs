@@ -23,7 +23,7 @@ export async function createPedido(data: PedidoInput) {
       notes: parsed.notes,
     },
   });
-  revalidatePath("/protected/pedidos");
+  revalidatePath("/pedidos");
 }
 
 export async function updatePedido(data: PedidoInput) {
@@ -39,10 +39,10 @@ export async function updatePedido(data: PedidoInput) {
       notes: parsed.notes,
     },
   });
-  revalidatePath("/protected/pedidos");
+  revalidatePath("/pedidos");
 }
 
 export async function deletePedido(id: string) {
   await prisma.order.delete({ where: { id } });
-  revalidatePath("/protected/pedidos");
+  revalidatePath("/pedidos");
 }

@@ -16,7 +16,7 @@ export function ProductoForm({ initialData, categorias }: { initialData: Product
     e.preventDefault();
     if (isUpdate) await updateProduct(form);
     else await createProduct(form);
-    router.push("/protected/productos");
+    router.push("/productos-admin");
     router.refresh();
   }
 
