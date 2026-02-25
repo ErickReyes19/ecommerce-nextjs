@@ -1,20 +1,17 @@
-import Link from "next/link";
-import { deleteCupon, getCupones } from "./actions";
+import HeaderComponent from "@/components/HeaderComponent";
+import { ListCheck } from "lucide-react";
+import { getCupones } from "./actions";
+import { columns } from "./components/columns";
+import { DataTable } from "./components/data-table";
+import CuponesListMobile from "./components/cupones-list-mobile";
 
 export default async function AdminCuponesPage() {
-  const coupons = await getCupones();
+  const cupones = await getCupones();
   return (
-    <main className="space-y-3">
-      <Link href="/cupones/create" className="underline">Nuevo cupón</Link>
-      {coupons.map((c) => (
-        <div key={c.id} className="rounded border p-3 flex items-center justify-between">
-          <div>{c.code} · {c.type} · {Number(c.value)} · {c.active ? "Activo" : "Inactivo"}</div>
-          <div className="flex gap-2">
-            <Link href={`/cupones/${c.id}/edit`} className="underline">Editar</Link>
-            <form action={deleteCupon.bind(null, c.id)}><button className="underline" type="submit">Eliminar</button></form>
-          </div>
-        </div>
-      ))}
-    </main>
+    <div className="container mx-auto py-2">
+      <HeaderComponent Icon={ListCheck} description="En este apartado podrá ver todos los cupones" screenName="Cupones" />
+      <div className="hidden md:block"><DataTable columns={columns} data={cupones} /></div>
+      <div className="block md:hidden"><CuponesListMobile cupones={cupones} /></div>
+    </div>
   );
 }

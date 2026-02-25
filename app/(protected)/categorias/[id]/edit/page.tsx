@@ -1,4 +1,6 @@
+import HeaderComponent from "@/components/HeaderComponent";
 import { prisma } from "@/lib/prisma";
+import { Pencil } from "lucide-react";
 import { notFound } from "next/navigation";
 import { CategoriaForm } from "../../components/form";
 
@@ -12,15 +14,9 @@ export default async function EditCategoriaPage({ params }: { params: Promise<{ 
   if (!categoria) return notFound();
 
   return (
-    <CategoriaForm
-      initialData={{
-        id: categoria.id,
-        name: categoria.name,
-        slug: categoria.slug,
-        description: categoria.description ?? "",
-        parentId: categoria.parentId,
-      }}
-      categorias={categorias}
-    />
+    <div>
+      <HeaderComponent Icon={Pencil} description="En este apartado podrás editar una categoría" screenName="Editar Categoría" />
+      <CategoriaForm initialData={{ id: categoria.id, name: categoria.name, slug: categoria.slug, description: categoria.description ?? "", parentId: categoria.parentId }} categorias={categorias} />
+    </div>
   );
 }

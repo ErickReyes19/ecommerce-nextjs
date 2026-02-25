@@ -1,4 +1,6 @@
+import HeaderComponent from "@/components/HeaderComponent";
 import { prisma } from "@/lib/prisma";
+import { Pencil } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getProductoById } from "../../actions";
 import { ProductoForm } from "../../components/form";
@@ -12,18 +14,9 @@ export default async function EditProductoPage({ params }: { params: Promise<{ i
   if (!producto) return notFound();
 
   return (
-    <ProductoForm
-      initialData={{
-        id: producto.id,
-        name: producto.name,
-        slug: producto.slug,
-        description: producto.description,
-        sku: producto.sku,
-        basePrice: Number(producto.basePrice),
-        categoryId: producto.categoryId,
-        brandId: producto.brandId,
-      }}
-      categorias={categorias}
-    />
+    <div>
+      <HeaderComponent Icon={Pencil} description="En este apartado podrás editar un producto" screenName="Editar Producto" />
+      <ProductoForm initialData={{ id: producto.id, name: producto.name, slug: producto.slug, description: producto.description, sku: producto.sku, basePrice: Number(producto.basePrice), categoryId: producto.categoryId, brandId: producto.brandId }} categorias={categorias} />
+    </div>
   );
 }

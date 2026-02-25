@@ -1,21 +1,19 @@
-import Link from "next/link";
-import { deleteCategoria, getCategorias } from "./actions";
+import HeaderComponent from "@/components/HeaderComponent";
+import { ListCheck } from "lucide-react";
+import { getCategorias } from "./actions";
+import { columns } from "./components/columns";
+import { DataTable } from "./components/data-table";
+import CategoriasListMobile from "./components/categorias-list-mobile";
 
 export default async function AdminCategoriasPage() {
-  const categories = await getCategorias();
+  const categorias = await getCategorias();
+  const data = categorias.map((categoria) => ({ ...categoria, parentName: categoria.parent?.name ?? "Sin categoría padre" }));
 
   return (
-    <main className="space-y-3">
-      <Link href="/categorias/create" className="underline">Nueva categoría</Link>
-      {categories.map((c) => (
-        <div key={c.id} className="rounded border p-3 flex items-center justify-between gap-4">
-          <div>{c.name} {c.parent ? `· Padre: ${c.parent.name}` : ""}</div>
-          <div className="flex gap-2">
-            <Link href={`/categorias/${c.id}/edit`} className="underline">Editar</Link>
-            <form action={deleteCategoria.bind(null, c.id)}><button className="underline" type="submit">Eliminar</button></form>
-          </div>
-        </div>
-      ))}
-    </main>
+    <div className="container mx-auto py-2">
+      <HeaderComponent Icon={ListCheck} description="En este apartado podrá ver todas las categorías" screenName="Categorías" />
+      <div className="hidden md:block"><DataTable columns={columns} data={data} /></div>
+      <div className="block md:hidden"><CategoriasListMobile categorias={data} /></div>
+    </div>
   );
 }
