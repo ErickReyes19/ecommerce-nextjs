@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { runPixelPayCheckout } from "./pixelpay.service";
 import { PixelPayCheckoutProps } from "./pixelpay.types";
 import { moneyFormatter } from "./pixelpay.utils";
+import { writeLocalCart } from "@/src/lib/local-cart";
 
 export function PixelPayCheckout({
   cartId,
@@ -116,7 +117,8 @@ export function PixelPayCheckout({
           return;
         }
 
-        toast.success("Pago aprobado. Redirigiendo...", { id: "pixelpay-checkout" });
+        writeLocalCart({ items: [], updatedAt: new Date().toISOString() });
+        toast.success("Pago aprobado. Pedido generado correctamente.", { id: "pixelpay-checkout" });
         router.push(`/perfil?orderId=${response.orderId ?? ""}`);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Error al procesar pago", { id: "pixelpay-checkout" });
