@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { getSession } from "@/auth";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { PixelPayCheckout } from "@/src/components/ecommerce/pixelpay-checkout";
 import { moneyFormatter } from "@/src/services/pixelpay.utils";
 
@@ -87,6 +88,9 @@ export default async function CheckoutPage() {
               <span>Total</span>
               <span>{moneyFormatter("HNL", subtotal)}</span>
             </div>
+            <Button type="submit" form="pixelpay-checkout-form" className="w-full">
+              Pagar con PixelPay
+            </Button>
           </CardContent>
         </Card>
       </div>
