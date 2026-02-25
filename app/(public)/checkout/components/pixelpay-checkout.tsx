@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Locations from "@pixelpay/sdk-core/lib/resources/Locations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -46,6 +47,7 @@ export function PixelPayCheckout({
     grandTotal: subtotal + shippingPrice,
     appliedCouponCode: null as string | null,
   });
+  const [couponCodeToValidate, setCouponCodeToValidate] = useState("");
 
   const selectedShipping = useMemo(
     () => shippingMethods.find((method) => method.id === shippingMethodId),
@@ -61,7 +63,7 @@ export function PixelPayCheckout({
 
   const [form, setForm] = useState({
     addressId: "",
-    couponCode: "",
+    couponCode: couponCodeToValidate,
     card_holder: defaultCustomerName,
     card_number: "",
     card_exp_month: "",
@@ -83,7 +85,7 @@ export function PixelPayCheckout({
     const run = async () => {
       if (!shippingMethodId) return;
       const params = new URLSearchParams({ cartId, shippingMethodId });
-      if (form.couponCode.trim()) params.set("couponCode", form.couponCode.trim());
+      if (couponCodeToValidate.trim()) params.set("couponCode", couponCodeToValidate.trim());
 
       const response = await fetch(`/api/pixelpay/checkout?${params.toString()}`, { signal: controller.signal });
       const payload = await response.json();
@@ -94,7 +96,7 @@ export function PixelPayCheckout({
 
     run().catch(() => null);
     return () => controller.abort();
-  }, [cartId, shippingMethodId, form.couponCode]);
+  }, [cartId, shippingMethodId, couponCodeToValidate]);
 
   const departments = useMemo(() => {
     const stateMap = normalizeLocationMap(Locations.statesList(form.billing_country));
@@ -116,7 +118,7 @@ export function PixelPayCheckout({
             shippingMethodId,
             shippingPrice,
             addressId: form.addressId || undefined,
-            couponCode: form.couponCode || undefined,
+            couponCode: couponCodeToValidate || undefined,
           },
           card: {
             card_holder: form.card_holder,
@@ -186,9 +188,23 @@ export function PixelPayCheckout({
               <p className="font-medium">Totales</p>
               <div className="flex items-center justify-between text-muted-foreground"><span>Subtotal</span><span>{moneyFormatter("HNL", totals.subtotal)}</span></div>
               <div className="flex items-center justify-between text-muted-foreground"><span>Envío</span><span>{moneyFormatter("HNL", totals.shippingTotal)}</span></div>
-              <div className="space-y-1">
-                <Label htmlFor="coupon">Cupón</Label>
-                <Input id="coupon" value={form.couponCode} placeholder="Ej: BIENVENIDA10" onChange={(e) => setForm((prev) => ({ ...prev, couponCode: e.target.value.toUpperCase() }))} />
+              <div className="flex items-end gap-2">
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="coupon">Cupón</Label>
+                  <Input
+                    id="coupon"
+                    value={form.couponCode}
+                    placeholder="Ej: BIENVENIDA10"
+                    onChange={(e) => setForm((prev) => ({ ...prev, couponCode: e.target.value.toUpperCase() }))}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCouponCodeToValidate(form.couponCode.trim().toUpperCase())}
+                >
+                  Validar
+                </Button>
               </div>
               <div className="flex items-center justify-between text-emerald-700"><span>Descuento</span><span>- {moneyFormatter("HNL", totals.discountTotal)}</span></div>
               <div className="flex items-center justify-between border-t pt-2 text-base font-semibold"><span>Total</span><span>{moneyFormatter("HNL", totals.grandTotal)}</span></div>

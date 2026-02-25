@@ -11,6 +11,7 @@ import { removeCartItem, updateCartItem } from "@/src/actions/cart-actions";
 import { CartLocalStorageSync } from "@/src/components/ecommerce/cart-local-storage-sync";
 import type { Metadata } from "next";
 import { formatHNL } from "@/src/lib/currency";
+import { ProductCard } from "@/src/components/ecommerce/product-card";
 
 export const metadata: Metadata = {
   title: "Carrito | Tienda",
@@ -44,6 +45,26 @@ export default async function CarritoPage() {
     0
   );
 
+
+  const cartProductIds = items.map((item) => item.productId);
+  const cartCategoryIds = Array.from(new Set(items.map((item) => item.product.categoryId)));
+
+  const recommendedProducts = cartCategoryIds.length
+    ? await prisma.product.findMany({
+        where: {
+          isActive: true,
+          categoryId: { in: cartCategoryIds },
+          id: { notIn: cartProductIds.length ? cartProductIds : undefined },
+        },
+        include: {
+          category: { select: { name: true } },
+          images: { where: { isMain: true }, take: 1 },
+        },
+        take: 4,
+        orderBy: { createdAt: "desc" },
+      })
+    : [];
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-8">
       <h1 className="mb-2 font-serif text-3xl font-bold tracking-tight text-foreground">
@@ -63,6 +84,7 @@ export default async function CarritoPage() {
       />
 
       {items.length > 0 ? (
+        <>
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Items */}
           <div className="space-y-4 lg:col-span-2">
@@ -206,6 +228,31 @@ export default async function CarritoPage() {
             </CardContent>
           </Card>
         </div>
+
+        {recommendedProducts.length > 0 ? (
+          <section className="mt-10">
+            <h2 className="mb-4 text-2xl font-semibold text-foreground">
+              Recomendaciones para ti
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {recommendedProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={{
+                    id: product.id,
+                    name: product.name,
+                    slug: product.slug,
+                    basePrice: Number(product.basePrice),
+                    compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
+                    category: { name: product.category.name },
+                    image: product.images[0]?.url ?? null,
+                  }}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+        </>
       ) : (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <ShoppingBag className="mb-4 h-16 w-16 text-muted-foreground/30" />

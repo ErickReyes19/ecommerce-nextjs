@@ -28,6 +28,7 @@ const mantenimientoItems = [
   { title: "Roles", url: "/roles", icon: LayersIcon, permiso: "ver_roles" },
   { title: "Permisos", url: "/permisos", icon: LayersIcon, permiso: "ver_permisos" },
   { title: "Usuarios", url: "/usuarios", icon: UserIcon, permiso: "ver_usuarios" },
+  { title: "Facturas", url: "/perfil", icon: LayersIcon, permiso: "ver_facturas" },
 ];
 
 const items = [
@@ -44,13 +45,13 @@ const tiendaItems = [
 ];
 
 const ecommerceAdminItems = [
-  { title: "Dashboard", url: "/dashboard" },
-  { title: "Productos", url: "/productos-admin" },
-  { title: "Categorías", url: "/categorias" },
-  { title: "Pedidos", url: "/pedidos" },
-  { title: "Usuarios", url: "/usuarios" },
-  { title: "Cupones", url: "/cupones" },
-  { title: "Reportes", url: "/reportes" },
+  { title: "Dashboard", url: "/dashboard", permiso: "ver_dashboard" },
+  { title: "Productos", url: "/productos-admin", permiso: "ver_productos_admin" },
+  { title: "Categorías", url: "/categorias", permiso: "ver_categorias_admin" },
+  { title: "Pedidos", url: "/pedidos", permiso: "ver_pedidos_admin" },
+  { title: "Usuarios", url: "/usuarios", permiso: "ver_usuarios" },
+  { title: "Cupones", url: "/cupones", permiso: "ver_cupones_admin" },
+  { title: "Reportes", url: "/reportes", permiso: "ver_reportes_admin" },
 ];
 
 export async function AppSidebar() {
@@ -64,6 +65,8 @@ export async function AppSidebar() {
   });
   const filteredMantenimientoItems = mantenimientoItems.filter((item) => permisosUsuario.includes(item.permiso));
   const showMantenimiento = filteredMantenimientoItems.length > 0;
+  const filteredEcommerceAdminItems = ecommerceAdminItems.filter((item) => permisosUsuario.includes(item.permiso));
+  const showEcommerceAdmin = usuario?.Rol === "ADMIN" && filteredEcommerceAdminItems.length > 0;
 
   return (
     <Sidebar collapsible="icon" variant="floating">
@@ -96,7 +99,7 @@ export async function AppSidebar() {
               ))}
 
 
-              {usuario?.Rol === "ADMIN" && (
+              {showEcommerceAdmin && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <Link href="/dashboard">
@@ -105,7 +108,7 @@ export async function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                   <SidebarMenuSub>
-                    {ecommerceAdminItems.map((item) => (
+                    {filteredEcommerceAdminItems.map((item) => (
                       <SidebarMenuSubItem key={item.url}>
                         <SidebarMenuSubButton asChild>
                           <Link href={item.url}>{item.title}</Link>
