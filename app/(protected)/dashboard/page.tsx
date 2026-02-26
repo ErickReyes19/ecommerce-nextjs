@@ -5,6 +5,7 @@ import { formatHNL } from "@/src/lib/currency";
 import { getSessionPermisos } from "@/auth";
 import { LayoutDashboard } from "lucide-react";
 import { getDashboardKpis } from "./actions";
+import { DashboardCharts } from "./components/dashboard-charts";
 
 export default async function AdminDashboardPage() {
   const permisos = await getSessionPermisos();
@@ -12,13 +13,13 @@ export default async function AdminDashboardPage() {
   const { products, orders, users, paidOrders, activeCoupons, activeShippingMethods, sales } = await getDashboardKpis();
 
   const kpis = [
-    { label: "Productos", value: products.toString() },
-    { label: "Pedidos totales", value: orders.toString() },
-    { label: "Pedidos pagados", value: paidOrders.toString() },
-    { label: "Usuarios", value: users.toString() },
-    { label: "Cupones activos", value: activeCoupons.toString() },
-    { label: "Métodos de envío activos", value: activeShippingMethods.toString() },
-    { label: "Venta acumulada", value: formatHNL(sales) },
+    { label: "Productos", value: products.toString(), chartValue: products },
+    { label: "Pedidos totales", value: orders.toString(), chartValue: orders },
+    { label: "Pedidos pagados", value: paidOrders.toString(), chartValue: paidOrders },
+    { label: "Usuarios", value: users.toString(), chartValue: users },
+    { label: "Cupones activos", value: activeCoupons.toString(), chartValue: activeCoupons },
+    { label: "Métodos de envío activos", value: activeShippingMethods.toString(), chartValue: activeShippingMethods },
+    { label: "Venta acumulada", value: formatHNL(sales), chartValue: sales },
   ];
 
   return (
@@ -29,6 +30,7 @@ export default async function AdminDashboardPage() {
           <Card key={kpi.label}><CardHeader><CardTitle>{kpi.label}</CardTitle></CardHeader><CardContent className="text-3xl font-bold">{kpi.value}</CardContent></Card>
         ))}
       </main>
+      <DashboardCharts kpis={kpis.map((kpi) => ({ label: kpi.label, value: kpi.chartValue }))} />
     </div>
   );
 }
