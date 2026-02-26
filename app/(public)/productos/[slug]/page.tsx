@@ -70,6 +70,7 @@ export default async function ProductDetailPage({
             <div className="mb-2 flex items-center gap-2">
               <Badge variant="outline">{product.category.name}</Badge>
               {product.brand && <Badge variant="secondary">{product.brand.name}</Badge>}
+              {product.provider && <Badge variant="outline">Proveedor: {product.provider.name}</Badge>}
             </div>
             <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground md:text-4xl">{product.name}</h1>
           </div>

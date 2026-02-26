@@ -17,6 +17,7 @@ export default async function AdminProductosPage() {
     basePrice: Number(producto.basePrice),
     compareAtPrice: producto.compareAtPrice ? Number(producto.compareAtPrice) : null,
     categoryName: producto.category.name,
+    providerName: producto.provider?.name ?? "Interno",
   }));
 
   return (

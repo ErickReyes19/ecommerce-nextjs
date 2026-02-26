@@ -29,10 +29,12 @@ export function ProductoForm({
   initialData,
   categorias,
   marcas,
+  proveedores,
 }: {
   initialData: ProductInput;
   categorias: Array<{ id: string; name: string }>;
   marcas: Array<{ id: string; name: string }>;
+  proveedores: Array<{ id: string; name: string; services: Array<{ id: string; name: string }> }>;
 }) {
   const router = useRouter();
   const isUpdate = Boolean(initialData.id);
@@ -40,6 +42,9 @@ export function ProductoForm({
     resolver: zodResolver(productSchema),
     defaultValues: initialData,
   });
+
+  const selectedProviderId = form.watch("providerId");
+  const providerServices = proveedores.find((provider) => provider.id === selectedProviderId)?.services ?? [];
 
   async function onSubmit(data: ProductInput) {
     try {
@@ -364,6 +369,89 @@ export function ProductoForm({
             </Field>
           )}
         />
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Controller
+            name="providerId"
+            control={form.control}
+            render={({ field }) => (
+              <Field>
+                <FieldLabel>Proveedor</FieldLabel>
+                <FieldContent>
+                  <Select
+                    value={field.value ?? "none"}
+                    onValueChange={(value) => {
+                      const providerId = value === "none" ? null : value;
+                      field.onChange(providerId);
+                      form.setValue("providerServiceId", null);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona proveedor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin proveedor</SelectItem>
+                      {proveedores.map((provider) => (
+                        <SelectItem key={provider.id} value={provider.id}>{provider.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FieldContent>
+              </Field>
+            )}
+          />
+          <Controller
+            name="providerServiceId"
+            control={form.control}
+            render={({ field }) => (
+              <Field>
+                <FieldLabel>Servicio proveedor</FieldLabel>
+                <FieldContent>
+                  <Select
+                    value={field.value ?? "none"}
+                    onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                    disabled={!selectedProviderId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona servicio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin servicio</SelectItem>
+                      {providerServices.map((service) => (
+                        <SelectItem key={service.id} value={service.id}>{service.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FieldContent>
+              </Field>
+            )}
+          />
+          <Controller
+            name="externalProductId"
+            control={form.control}
+            render={({ field }) => (
+              <Field>
+                <FieldLabel>ID externo del producto</FieldLabel>
+                <FieldContent>
+                  <Input {...field} value={field.value ?? ""} placeholder="id_producto_tienda_x" />
+                </FieldContent>
+              </Field>
+            )}
+          />
+          <Controller
+            name="syncMetadata"
+            control={form.control}
+            render={({ field }) => (
+              <Field>
+                <FieldLabel>Metadata de sincronización</FieldLabel>
+                <FieldContent>
+                  <Input {...field} value={field.value ?? ""} placeholder='{"source":"proveedor-x"}' />
+                </FieldContent>
+              </Field>
+            )}
+          />
+        </div>
+
         <Controller
           name="active"
           control={form.control}

@@ -55,10 +55,15 @@ export default async function EditProductoPage({
           active: producto.active,
           categoryId: producto.categoryId,
           brandId: producto.brandId,
+          providerId: producto.providerId,
+          providerServiceId: producto.providerServiceId,
+          externalProductId: producto.externalProductId,
+          syncMetadata: producto.syncMetadata,
           imageUrls: producto.images.map((image) => image.url).join("\n"),
         }}
         categorias={options.categorias}
         marcas={options.marcas}
+        proveedores={options.proveedores}
       />
     </div>
   );

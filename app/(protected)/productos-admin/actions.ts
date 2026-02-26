@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 
 export async function getProductos() {
   return prisma.product.findMany({
-    include: { category: true, brand: true },
+    include: { category: true, brand: true, provider: true, providerService: true },
     orderBy: { createdAt: "desc" },
     take: 50,
   });
@@ -23,7 +23,7 @@ export async function getProductoById(id: string) {
 }
 
 export async function getProductoFormOptions() {
-  const [categorias, marcas] = await Promise.all([
+  const [categorias, marcas, proveedores] = await Promise.all([
     prisma.category.findMany({
       select: { id: true, name: true },
       orderBy: { name: "asc" },
@@ -32,9 +32,14 @@ export async function getProductoFormOptions() {
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
+    prisma.provider.findMany({
+      where: { active: true },
+      select: { id: true, name: true, services: { where: { active: true }, select: { id: true, name: true } } },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
-  return { categorias, marcas };
+  return { categorias, marcas, proveedores };
 }
 
 export async function createProduct(data: ProductInput) {
@@ -51,6 +56,10 @@ export async function createProduct(data: ProductInput) {
       compareAtPrice: parsed.compareAtPrice || null,
       categoryId: parsed.categoryId,
       brandId: parsed.brandId || null,
+      providerId: parsed.providerId || null,
+      providerServiceId: parsed.providerServiceId || null,
+      externalProductId: parsed.externalProductId || null,
+      syncMetadata: parsed.syncMetadata || null,
       images: {
         create: (parsed.imageUrls ?? "")
           .split(/\r?\n/)
@@ -101,6 +110,10 @@ export async function updateProduct(data: ProductInput) {
       compareAtPrice: parsed.compareAtPrice || null,
       categoryId: parsed.categoryId,
       brandId: parsed.brandId || null,
+      providerId: parsed.providerId || null,
+      providerServiceId: parsed.providerServiceId || null,
+      externalProductId: parsed.externalProductId || null,
+      syncMetadata: parsed.syncMetadata || null,
       images: {
         deleteMany: {},
         create: (parsed.imageUrls ?? "")

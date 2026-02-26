@@ -75,6 +75,18 @@ model PasswordResetToken {
   @@index([userId], map: "IX_PasswordResetToken_userId")
 }
 
+
+enum ProviderType {
+  API
+  MANUAL
+}
+
+enum ProviderOrderDispatchStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 enum CouponType {
   PERCENTAGE
   FIXED
@@ -238,6 +250,12 @@ model Product {
   orderItems       OrderItem[]
   cartItems        CartItem[]
   coupons          Coupon[]
+  providerId       String?
+  providerServiceId String?
+  externalProductId String?
+  syncMetadata     String?            @db.Text
+  provider         Provider?          @relation(fields: [providerId], references: [id])
+  providerService  ProviderService?   @relation(fields: [providerServiceId], references: [id])
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 }
@@ -398,6 +416,60 @@ model Order {
   payments         Payment[]
   shipments        Shipment[]
   history          OrderHistory[]
+  providerDispatches ProviderOrderDispatch[]
+}
+
+
+model Provider {
+  id                String             @id @default(cuid())
+  name              String
+  slug              String             @unique
+  description       String?
+  type              ProviderType       @default(API)
+  active            Boolean            @default(true)
+  services          ProviderService[]
+  products          Product[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model ProviderService {
+  id                String             @id @default(cuid())
+  providerId        String
+  name              String
+  baseUrl           String
+  productEndpoint   String
+  orderEndpoint     String
+  authType          String             @default("NONE")
+  token             String?
+  apiKey            String?
+  secretKey         String?
+  headersJson       String?            @db.Text
+  active            Boolean            @default(true)
+  provider          Provider           @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  products          Product[]
+  dispatches        ProviderOrderDispatch[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([providerId])
+}
+
+model ProviderOrderDispatch {
+  id                String                      @id @default(cuid())
+  orderId           String
+  providerServiceId String
+  requestPayload    String                      @db.Text
+  responsePayload   String?                     @db.Text
+  status            ProviderOrderDispatchStatus @default(PENDING)
+  errorMessage      String?
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+  order             Order                       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  providerService   ProviderService             @relation(fields: [providerServiceId], references: [id])
+
+  @@index([orderId])
+  @@index([providerServiceId])
 }
 
 model OrderItem {

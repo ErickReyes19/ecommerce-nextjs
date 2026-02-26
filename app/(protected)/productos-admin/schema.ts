@@ -17,6 +17,10 @@ export const productSchema = z
     active: z.boolean(),
     categoryId: z.string().min(1),
     brandId: z.string().optional().nullable(),
+    providerId: z.string().optional().nullable(),
+    providerServiceId: z.string().optional().nullable(),
+    externalProductId: z.string().optional().nullable(),
+    syncMetadata: z.string().optional().nullable(),
     imageUrls: z.string().optional(),
   })
   .refine(
