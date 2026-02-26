@@ -28,7 +28,6 @@ const mantenimientoItems = [
   { title: "Roles", url: "/roles", icon: LayersIcon, permiso: "ver_roles" },
   { title: "Permisos", url: "/permisos", icon: LayersIcon, permiso: "ver_permisos" },
   { title: "Usuarios", url: "/usuarios", icon: UserIcon, permiso: "ver_usuarios" },
-  { title: "Facturas", url: "/perfil", icon: LayersIcon, permiso: "ver_facturas" },
 ];
 
 const items = [
@@ -41,7 +40,7 @@ const tiendaItems = [
   { title: "Productos tienda", url: "/productos" },
   { title: "Carrito", url: "/carrito" },
   { title: "Checkout", url: "/checkout" },
-  { title: "Mis pedidos / facturas", url: "/perfil" },
+  { title: "Mis pedidos", url: "/perfil" },
 ];
 
 const ecommerceAdminItems = [
