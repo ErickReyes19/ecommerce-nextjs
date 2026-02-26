@@ -1,8 +1,6 @@
 import { cookies } from "next/headers";
 import { getSession } from "@/auth";
 import { redirect } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { PixelPayCheckout } from "./components/pixelpay-checkout";
 import { moneyFormatter } from "./components/pixelpay.utils";
 import { getCheckoutData } from "./actions";
