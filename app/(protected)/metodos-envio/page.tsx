@@ -1,11 +1,16 @@
 import Link from "next/link";
+import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
+import NoAcceso from "@/components/noAccess";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Truck } from "lucide-react";
 import { deleteMetodoEnvio, getMetodosEnvio } from "./actions";
 
 export default async function MetodosEnvioPage() {
+  const permisos = await getSessionPermisos();
+  if (!permisos?.includes("ver_metodos_envio_admin")) return <NoAcceso />;
+
   const methods = await getMetodosEnvio();
 
   return (

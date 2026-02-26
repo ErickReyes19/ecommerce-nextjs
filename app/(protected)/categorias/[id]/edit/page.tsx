@@ -1,15 +1,17 @@
+import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
-import { prisma } from "@/lib/prisma";
+import NoAcceso from "@/components/noAccess";
 import { Pencil } from "lucide-react";
 import { notFound } from "next/navigation";
+import { getCategoriaById, getCategoriasSelector } from "../../actions";
 import { CategoriaForm } from "../../components/form";
 
 export default async function EditCategoriaPage({ params }: { params: Promise<{ id: string }> }) {
+  const permisos = await getSessionPermisos();
+  if (!permisos?.includes("editar_categorias_admin")) return <NoAcceso />;
+
   const { id } = await params;
-  const [categoria, categorias] = await Promise.all([
-    prisma.category.findUnique({ where: { id } }),
-    prisma.category.findMany({ select: { id: true, name: true } }),
-  ]);
+  const [categoria, categorias] = await Promise.all([getCategoriaById(id), getCategoriasSelector()]);
 
   if (!categoria) return notFound();
 

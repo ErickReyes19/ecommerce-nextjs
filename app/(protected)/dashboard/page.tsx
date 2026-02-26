@@ -1,23 +1,15 @@
 import HeaderComponent from "@/components/HeaderComponent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { prisma } from "@/lib/prisma";
+import NoAcceso from "@/components/noAccess";
 import { formatHNL } from "@/src/lib/currency";
+import { getSessionPermisos } from "@/auth";
 import { LayoutDashboard } from "lucide-react";
+import { getDashboardKpis } from "./actions";
 
 export default async function AdminDashboardPage() {
-  const [products, orders, users, paidOrders, activeCoupons, activeShippingMethods] = await Promise.all([
-    prisma.product.count(),
-    prisma.order.count(),
-    prisma.user.count(),
-    prisma.order.count({ where: { status: "PAGADO" } }),
-    prisma.coupon.count({ where: { active: true } }),
-    prisma.shippingMethod.count({ where: { active: true } }),
-  ]);
-
-  const sales = await prisma.order.aggregate({
-    _sum: { grandTotal: true },
-    where: { status: "PAGADO" },
-  });
+  const permisos = await getSessionPermisos();
+  if (!permisos?.includes("ver_dashboard")) return <NoAcceso />;
+  const { products, orders, users, paidOrders, activeCoupons, activeShippingMethods, sales } = await getDashboardKpis();
 
   const kpis = [
     { label: "Productos", value: products.toString() },
@@ -26,7 +18,7 @@ export default async function AdminDashboardPage() {
     { label: "Usuarios", value: users.toString() },
     { label: "Cupones activos", value: activeCoupons.toString() },
     { label: "Métodos de envío activos", value: activeShippingMethods.toString() },
-    { label: "Venta acumulada", value: formatHNL(Number(sales._sum.grandTotal ?? 0)) },
+    { label: "Venta acumulada", value: formatHNL(sales) },
   ];
 
   return (

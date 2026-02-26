@@ -1,13 +1,15 @@
+import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
-import { prisma } from "@/lib/prisma";
+import NoAcceso from "@/components/noAccess";
 import { PlusCircle } from "lucide-react";
+import { getProductoFormOptions } from "../actions";
 import { ProductoForm } from "../components/form";
 
 export default async function CreateProductoPage() {
-  const [categorias, marcas] = await Promise.all([
-    prisma.category.findMany({ select: { id: true, name: true } }),
-    prisma.brand.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
-  ]);
+  const permisos = await getSessionPermisos();
+  if (!permisos?.includes("crear_productos_admin")) return <NoAcceso />;
+
+  const { categorias, marcas } = await getProductoFormOptions();
 
   return (
     <div>
