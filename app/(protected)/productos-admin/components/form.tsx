@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,7 +36,7 @@ export function ProductoForm({
 }) {
   const router = useRouter();
   const isUpdate = Boolean(initialData.id);
-  const form = useForm<z.input<typeof productSchema>, unknown, ProductInput>({
+  const form = useForm<ProductInput>({
     resolver: zodResolver(productSchema),
     defaultValues: initialData,
   });
@@ -166,7 +165,13 @@ export function ProductoForm({
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel>Precio base</FieldLabel>
                 <FieldContent>
-                  <Input type="number" step="0.01" {...field} />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...field}
+                    value={field.value ?? 0}
+                    onChange={(event) => field.onChange(Number(event.target.value))}
+                  />
                 </FieldContent>
                 {fieldState.invalid && (
                   <FieldError errors={[fieldState.error]} />
@@ -189,7 +194,9 @@ export function ProductoForm({
                     value={field.value ?? ""}
                     onChange={(event) =>
                       field.onChange(
-                        event.target.value === "" ? null : event.target.value,
+                        event.target.value === ""
+                          ? null
+                          : Number(event.target.value),
                       )
                     }
                   />
@@ -215,7 +222,9 @@ export function ProductoForm({
                     value={field.value ?? ""}
                     onChange={(event) =>
                       field.onChange(
-                        event.target.value === "" ? null : event.target.value,
+                        event.target.value === ""
+                          ? null
+                          : Number(event.target.value),
                       )
                     }
                   />
@@ -235,7 +244,14 @@ export function ProductoForm({
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel>Stock</FieldLabel>
                 <FieldContent>
-                  <Input type="number" min={0} step={1} {...field} />
+                  <Input
+                    type="number"
+                    min={0}
+                    step={1}
+                    {...field}
+                    value={field.value ?? 0}
+                    onChange={(event) => field.onChange(Number(event.target.value))}
+                  />
                 </FieldContent>
                 {fieldState.invalid && (
                   <FieldError errors={[fieldState.error]} />
@@ -273,7 +289,9 @@ export function ProductoForm({
                     value={field.value ?? ""}
                     onChange={(event) =>
                       field.onChange(
-                        event.target.value === "" ? null : event.target.value,
+                        event.target.value === ""
+                          ? null
+                          : Number(event.target.value),
                       )
                     }
                   />
