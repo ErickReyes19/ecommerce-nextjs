@@ -6,20 +6,15 @@ import { randomUUID } from "crypto";
 const prisma = new PrismaClient();
 
 const ADMIN_PERMISSIONS = [
-  "ver_dashboard",
-  "ver_productos_admin", "crear_productos_admin", "editar_productos_admin",
-  "ver_categorias_admin", "crear_categorias_admin", "editar_categorias_admin",
-  "ver_pedidos_admin", "crear_pedidos_admin", "editar_pedidos_admin",
-  "ver_cupones_admin", "crear_cupones_admin", "editar_cupones_admin",
-  "ver_metodos_envio_admin", "crear_metodos_envio_admin", "editar_metodos_envio_admin",
-  "ver_reportes_admin",
-  "ver_permisos", "crear_permisos", "editar_permisos",
-  "ver_roles", "crear_roles", "editar_roles",
+  "ver_permisos", "ver_roles", "crear_roles", "editar_roles",
   "ver_usuarios", "crear_usuario", "editar_usuario",
-  "ver_mi_perfil", "ver_facturas"
+  "ver_profile", "ver_dashboard",
+  "ver_productos_admin", "ver_categorias_admin", "ver_pedidos_admin",
+  "ver_metodos_envio_admin",
+  "ver_cupones_admin", "ver_reportes_admin", "ver_facturas",
 ] as const;
 
-const CLIENT_PERMISSIONS = ["ver_tienda_inicio", "ver_tienda_productos", "ver_tienda_producto_detalle", "ver_carrito", "ver_checkout", "ver_mi_perfil", "ver_facturas"] as const;
+const CLIENT_PERMISSIONS = ["ver_mi_perfil", "ver_facturas"] as const;
 
 const categoryTree = [
   { name: "Electrónica", slug: "electronica", children: ["smartphones", "laptops"] },
@@ -29,11 +24,19 @@ const categoryTree = [
 const brandNames = ["Apple", "Samsung", "Sony", "Xiaomi", "LG", "HP", "Lenovo", "Asus", "Philips", "Bosch"];
 
 async function upsertPermission(nombre: string) {
-  return prisma.permiso.upsert({
-    where: { nombre },
-    update: { descripcion: `Permiso para ${nombre.replaceAll("_", " ")}`, activo: true },
-    create: { id: randomUUID(), nombre, descripcion: `Permiso para ${nombre.replaceAll("_", " ")}`, activo: true },
-  });
+  try {
+    return await prisma.permiso.upsert({
+      where: { nombre },
+      update: { descripcion: `Permiso para ${nombre.replaceAll("_", " ")}`, activo: true },
+      create: { id: randomUUID(), nombre, descripcion: `Permiso para ${nombre.replaceAll("_", " ")}`, activo: true },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      // Ya existe un permiso con este nombre; devolvemos el existente para que el seed sea idempotente
+      return prisma.permiso.findUnique({ where: { nombre } });
+    }
+    throw error;
+  }
 }
 
 async function assignPermissions(rolId: string, permissionNames: readonly string[]) {
@@ -47,66 +50,28 @@ async function assignPermissions(rolId: string, permissionNames: readonly string
   ));
 }
 
-async function seedLegacyAuth() {
-  await Promise.all([...ADMIN_PERMISSIONS, ...CLIENT_PERMISSIONS].map(upsertPermission));
-
-  const [adminRole, clienteRole] = await Promise.all([
-    prisma.rol.upsert({
-      where: { nombre: "ADMIN" },
-      update: { descripcion: "Rol con acceso total", activo: true },
-      create: { id: randomUUID(), nombre: "ADMIN", descripcion: "Rol con acceso total", activo: true },
-    }),
-    prisma.rol.upsert({
-      where: { nombre: "CLIENTE" },
-      update: { descripcion: "Rol de cliente", activo: true },
-      create: { id: randomUUID(), nombre: "CLIENTE", descripcion: "Rol de cliente", activo: true },
-    }),
-  ]);
-
-  await assignPermissions(adminRole.id, [...ADMIN_PERMISSIONS, ...CLIENT_PERMISSIONS]);
-  await assignPermissions(clienteRole.id, CLIENT_PERMISSIONS);
-
-  const [adminPassword, clientePassword] = await Promise.all([
-    bcrypt.hash("Admin12345*", 10),
-    bcrypt.hash("Cliente12345*", 10),
-  ]);
-
-  await prisma.usuarios.upsert({
-    where: { email: "admin@membresia.local" },
-    update: { usuario: "admin", contrasena: adminPassword, nombre: "Administrador", rol_id: adminRole.id, activo: true, DebeCambiarPassword: false },
-    create: { id: randomUUID(), usuario: "admin", contrasena: adminPassword, nombre: "Administrador", email: "admin@membresia.local", rol_id: adminRole.id, activo: true, DebeCambiarPassword: false },
-  });
-
-  await prisma.usuarios.upsert({
-    where: { email: "cliente@membresia.local" },
-    update: { usuario: "cliente", contrasena: clientePassword, nombre: "Cliente Demo", rol_id: clienteRole.id, activo: true, DebeCambiarPassword: false },
-    create: { id: randomUUID(), usuario: "cliente", contrasena: clientePassword, nombre: "Cliente Demo", email: "cliente@membresia.local", rol_id: clienteRole.id, activo: true, DebeCambiarPassword: false },
-  });
-}
-
-async function seedEcommerce() {
-  const roleCustomer = await prisma.role.upsert({ where: { name: "CUSTOMER" }, update: {}, create: { name: "CUSTOMER", description: "Cliente ecommerce" } });
-  await prisma.role.upsert({ where: { name: "ADMIN" }, update: {}, create: { name: "ADMIN", description: "Administrador ecommerce" } });
-
-  await prisma.user.upsert({
-    where: { email: "shopper@example.com" },
-    update: {},
-    create: {
-      email: "shopper@example.com",
-      name: "Shopper Demo",
-      passwordHash: await bcrypt.hash("Shopper123*", 10),
-      roleId: roleCustomer.id,
-      addresses: { create: { fullName: "Shopper Demo", line1: "Calle Principal 123", city: "Tegucigalpa", state: "FM", postalCode: "11101", country: "HN", phone: "+50499999999", isDefault: true } },
-    },
-  });
-
-  const brands = await Promise.all(brandNames.map((name) => prisma.brand.upsert({ where: { slug: name.toLowerCase() }, update: {}, create: { name, slug: name.toLowerCase() } })));
-
-  const rootCategories = await Promise.all(categoryTree.map((node) => prisma.category.upsert({ where: { slug: node.slug }, update: { name: node.name }, create: { name: node.name, slug: node.slug } })));
-  for (const [i, root] of rootCategories.entries()) {
+  const rootCategories = await Promise.all(
+    categoryTree.map((node) =>
+      prisma.category.upsert({
+        where: { slug: node.slug },
+        update: { name: node.name },
+        create: { name: node.name, slug: node.slug }
+      })
+    )
+  );
+  for (let i = 0; i < rootCategories.length; i++) {
+    const root = rootCategories[i];
     const children = categoryTree[i].children;
     for (const child of children) {
-      await prisma.category.upsert({ where: { slug: child }, update: { parentId: root.id }, create: { name: child.charAt(0).toUpperCase() + child.slice(1), slug: child, parentId: root.id } });
+      await prisma.category.upsert({
+        where: { slug: child },
+        update: { parentId: root.id },
+        create: {
+          name: child.charAt(0).toUpperCase() + child.slice(1),
+          slug: child,
+          parentId: root.id
+        }
+      });
     }
   }
 

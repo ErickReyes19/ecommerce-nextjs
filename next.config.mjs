@@ -14,6 +14,14 @@ const nextConfig = {
           protocol: "https",
           hostname: "es.pandora.net",
         },
+        {
+          protocol: "https",
+          hostname: "cdn.shopify.com",
+        },
+        {
+          protocol: "https",
+          hostname: "singularu.com",
+        },
       ],
   },
   webpack: (config, { isServer }) => {
