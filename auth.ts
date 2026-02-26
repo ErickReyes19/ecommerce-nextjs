@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 import { TSchemaResetPassword, schemaResetPassword } from "./app/(public)/reset-password/schema";
 import { schemaSignIn, TSchemaSignIn } from './lib/shemas';
 import { prisma } from './lib/prisma';
-import { Prisma } from "./lib/generated/prisma";
+import { Prisma } from "@prisma/client";
 
 // ------------------------------
 // CONFIGURACIÓN DE JWT
