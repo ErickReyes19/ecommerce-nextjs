@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { runPixelPayCheckout } from "./pixelpay.service";
-import { PixelPayCheckoutProps } from "./pixelpay.types";
+import { CheckoutTotals, PixelPayCheckoutProps } from "./pixelpay.types";
 import { moneyFormatter } from "./pixelpay.utils";
 import { writeLocalCart } from "@/src/lib/local-cart";
 
@@ -25,6 +25,7 @@ export function PixelPayCheckout({
   defaultAddress,
   defaultCity,
   subtotal,
+  onTotalsChange,
 }: PixelPayCheckoutProps) {
   const normalizeLocationMap = (value: unknown): Record<string, string> => {
     if (!value || typeof value !== "object") return {};
@@ -40,12 +41,13 @@ export function PixelPayCheckout({
   const [isPending, startTransition] = useTransition();
   const [shippingMethodId, setShippingMethodId] = useState<string>(shippingMethods[0]?.id ?? "");
   const [shippingPrice, setShippingPrice] = useState<number>(shippingMethods[0]?.price ?? 0);
-  const [totals, setTotals] = useState({
+  const [totals, setTotals] = useState<CheckoutTotals>({
     subtotal,
     shippingTotal: shippingPrice,
     discountTotal: 0,
     grandTotal: subtotal + shippingPrice,
-    appliedCouponCode: null as string | null,
+    appliedCouponCode: null,
+    shippingMethodId: shippingMethods[0]?.id ?? "",
   });
   const [couponCodeToValidate, setCouponCodeToValidate] = useState("");
   const [couponFeedback, setCouponFeedback] = useState<string | null>(null);
@@ -99,7 +101,12 @@ export function PixelPayCheckout({
     }
 
     setShippingPrice(Number(payload.totals.shippingTotal));
-    setTotals(payload.totals);
+    const nextTotals: CheckoutTotals = {
+      ...payload.totals,
+      shippingMethodId,
+    };
+    setTotals(nextTotals);
+    onTotalsChange?.(nextTotals);
 
     if (normalizedCoupon) {
       if (payload.totals.appliedCouponCode) {
@@ -115,7 +122,7 @@ export function PixelPayCheckout({
     }
 
     return true;
-  }, [cartId, shippingMethodId]);
+  }, [cartId, onTotalsChange, shippingMethodId]);
 
   useEffect(() => {
     fetchTotals().catch(() => null);
