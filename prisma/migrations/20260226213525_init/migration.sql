@@ -198,6 +198,10 @@ CREATE TABLE `Product` (
     `compareAtPrice` DECIMAL(10, 2) NULL,
     `brandId` VARCHAR(191) NULL,
     `categoryId` VARCHAR(191) NOT NULL,
+    `providerId` VARCHAR(191) NULL,
+    `providerServiceId` VARCHAR(191) NULL,
+    `externalProductId` VARCHAR(191) NULL,
+    `syncMetadata` TEXT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -374,6 +378,59 @@ CREATE TABLE `Order` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `Provider` (
+    `id` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(191) NOT NULL,
+    `slug` VARCHAR(191) NOT NULL,
+    `description` VARCHAR(191) NULL,
+    `type` ENUM('API', 'MANUAL') NOT NULL DEFAULT 'API',
+    `active` BOOLEAN NOT NULL DEFAULT true,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `Provider_slug_key`(`slug`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `ProviderService` (
+    `id` VARCHAR(191) NOT NULL,
+    `providerId` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(191) NOT NULL,
+    `baseUrl` VARCHAR(191) NOT NULL,
+    `productEndpoint` VARCHAR(191) NOT NULL,
+    `orderEndpoint` VARCHAR(191) NOT NULL,
+    `authType` VARCHAR(191) NOT NULL DEFAULT 'NONE',
+    `token` VARCHAR(191) NULL,
+    `apiKey` VARCHAR(191) NULL,
+    `secretKey` VARCHAR(191) NULL,
+    `headersJson` TEXT NULL,
+    `active` BOOLEAN NOT NULL DEFAULT true,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    INDEX `ProviderService_providerId_idx`(`providerId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `ProviderOrderDispatch` (
+    `id` VARCHAR(191) NOT NULL,
+    `orderId` VARCHAR(191) NOT NULL,
+    `providerServiceId` VARCHAR(191) NOT NULL,
+    `requestPayload` TEXT NOT NULL,
+    `responsePayload` TEXT NULL,
+    `status` ENUM('PENDING', 'SENT', 'FAILED') NOT NULL DEFAULT 'PENDING',
+    `errorMessage` VARCHAR(191) NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    INDEX `ProviderOrderDispatch_orderId_idx`(`orderId`),
+    INDEX `ProviderOrderDispatch_providerServiceId_idx`(`providerServiceId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `OrderItem` (
     `id` VARCHAR(191) NOT NULL,
     `orderId` VARCHAR(191) NOT NULL,
@@ -459,6 +516,12 @@ ALTER TABLE `Product` ADD CONSTRAINT `Product_brandId_fkey` FOREIGN KEY (`brandI
 ALTER TABLE `Product` ADD CONSTRAINT `Product_categoryId_fkey` FOREIGN KEY (`categoryId`) REFERENCES `Category`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `Product` ADD CONSTRAINT `Product_providerId_fkey` FOREIGN KEY (`providerId`) REFERENCES `Provider`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Product` ADD CONSTRAINT `Product_providerServiceId_fkey` FOREIGN KEY (`providerServiceId`) REFERENCES `ProviderService`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `ProductVariant` ADD CONSTRAINT `ProductVariant_productId_fkey` FOREIGN KEY (`productId`) REFERENCES `Product`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -507,6 +570,15 @@ ALTER TABLE `Order` ADD CONSTRAINT `Order_addressId_fkey` FOREIGN KEY (`addressI
 ALTER TABLE `Order` ADD CONSTRAINT `Order_couponId_fkey` FOREIGN KEY (`couponId`) REFERENCES `Coupon`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `ProviderService` ADD CONSTRAINT `ProviderService_providerId_fkey` FOREIGN KEY (`providerId`) REFERENCES `Provider`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ProviderOrderDispatch` ADD CONSTRAINT `ProviderOrderDispatch_orderId_fkey` FOREIGN KEY (`orderId`) REFERENCES `Order`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ProviderOrderDispatch` ADD CONSTRAINT `ProviderOrderDispatch_providerServiceId_fkey` FOREIGN KEY (`providerServiceId`) REFERENCES `ProviderService`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `OrderItem` ADD CONSTRAINT `OrderItem_orderId_fkey` FOREIGN KEY (`orderId`) REFERENCES `Order`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -526,4 +598,3 @@ ALTER TABLE `Shipment` ADD CONSTRAINT `Shipment_shippingMethodId_fkey` FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE `OrderHistory` ADD CONSTRAINT `OrderHistory_orderId_fkey` FOREIGN KEY (`orderId`) REFERENCES `Order`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
