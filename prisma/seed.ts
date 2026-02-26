@@ -5,7 +5,7 @@ import {
   Prisma,
   PrismaClient,
   ShippingMethodType,
-} from "@/lib/generated/prisma";
+} from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 
