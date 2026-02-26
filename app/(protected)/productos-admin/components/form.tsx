@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Controller, Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -36,8 +37,10 @@ export function ProductoForm({
 }) {
   const router = useRouter();
   const isUpdate = Boolean(initialData.id);
-  const form = useForm<ProductInput>({
-    resolver: zodResolver(productSchema) as Resolver<ProductInput>,
+  type ProductFormValues = z.input<typeof productSchema>;
+
+  const form = useForm<ProductFormValues, unknown, ProductInput>({
+    resolver: zodResolver(productSchema),
     defaultValues: initialData,
   });
 
