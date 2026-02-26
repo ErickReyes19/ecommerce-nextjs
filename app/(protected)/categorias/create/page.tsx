@@ -1,10 +1,15 @@
+import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
-import { prisma } from "@/lib/prisma";
+import NoAcceso from "@/components/noAccess";
 import { PlusCircle } from "lucide-react";
+import { getCategoriasSelector } from "../actions";
 import { CategoriaForm } from "../components/form";
 
 export default async function CreateCategoriaPage() {
-  const categorias = await prisma.category.findMany({ select: { id: true, name: true } });
+  const permisos = await getSessionPermisos();
+  if (!permisos?.includes("crear_categorias_admin")) return <NoAcceso />;
+
+  const categorias = await getCategoriasSelector();
 
   return (
     <div>

@@ -1,4 +1,6 @@
+import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
+import NoAcceso from "@/components/noAccess";
 import { ListCheck } from "lucide-react";
 import { getCupones } from "./actions";
 import { columns } from "./components/columns";
@@ -6,6 +8,9 @@ import { DataTable } from "./components/data-table";
 import CuponesListMobile from "./components/cupones-list-mobile";
 
 export default async function AdminCuponesPage() {
+  const permisos = await getSessionPermisos();
+  if (!permisos?.includes("ver_cupones_admin")) return <NoAcceso />;
+
   const cupones = await getCupones();
   return (
     <div className="container mx-auto py-2">

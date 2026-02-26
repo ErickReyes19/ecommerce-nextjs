@@ -51,6 +51,7 @@ const ecommerceAdminItems = [
   { title: "Pedidos", url: "/pedidos", permiso: "ver_pedidos_admin" },
   { title: "Usuarios", url: "/usuarios", permiso: "ver_usuarios" },
   { title: "Cupones", url: "/cupones", permiso: "ver_cupones_admin" },
+  { title: "Métodos de envío", url: "/metodos-envio", permiso: "ver_metodos_envio_admin" },
   { title: "Reportes", url: "/reportes", permiso: "ver_reportes_admin" },
 ];
 
