@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { deleteProveedor } from "../actions";
+import { deleteProveedor, syncProveedorProductos } from "../actions";
 import { ProveedorTableItem } from "./columns";
 
 export default function ProveedoresListMobile({ proveedores }: { proveedores: ProveedorTableItem[] }) {
@@ -14,9 +14,12 @@ export default function ProveedoresListMobile({ proveedores }: { proveedores: Pr
           <p className="font-medium">{proveedor.name}</p>
           <p className="text-sm text-muted-foreground">{proveedor.slug} · {proveedor.type}</p>
           <p className="text-sm">Servicios: {proveedor.servicesCount}</p>
-          <div className="flex gap-2">
-            <Link href={`/proveedores/${proveedor.id}/edit`} className="flex-1"><Button variant="outline" className="w-full">Editar</Button></Link>
-            <form action={deleteProveedor.bind(null, proveedor.id)} className="flex-1"><Button variant="destructive" className="w-full" type="submit">Eliminar</Button></form>
+          <div className="grid grid-cols-1 gap-2">
+            <form action={syncProveedorProductos.bind(null, proveedor.id)}><Button variant="secondary" className="w-full" type="submit">Sincronizar productos</Button></form>
+            <div className="flex gap-2">
+              <Link href={`/proveedores/${proveedor.id}/edit`} className="flex-1"><Button variant="outline" className="w-full">Editar</Button></Link>
+              <form action={deleteProveedor.bind(null, proveedor.id)} className="flex-1"><Button variant="destructive" className="w-full" type="submit">Eliminar</Button></form>
+            </div>
           </div>
         </div>
       ))}

@@ -35,7 +35,7 @@ export async function addToCart(input: { productId: string; variantId?: string; 
   await prisma.cartItem.upsert({
     where: { cartId_productId_variantId: { cartId, productId, variantId: variantId ?? null } },
     update: { quantity: { increment: quantity } },
-    create: { cartId, productId, variantId, quantity },
+    create: { cartId, productId, variantId: variantId ?? null, quantity },
   });
 
   revalidatePath("/carrito");
@@ -72,7 +72,7 @@ export async function syncLocalCart(items: Array<{ productId: string; variantId?
         },
       },
       update: { quantity: item.quantity },
-      create: { cartId, productId: item.productId, variantId: item.variantId, quantity: item.quantity },
+      create: { cartId, productId: item.productId, variantId: item.variantId ?? null, quantity: item.quantity },
     });
   }
 

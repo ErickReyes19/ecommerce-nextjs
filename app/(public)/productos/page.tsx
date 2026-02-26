@@ -1,7 +1,7 @@
 import { ProductCard } from "@/src/components/ecommerce/product-card";
 import { ProductFilters } from "@/src/components/ecommerce/product-filters";
 import { SortSelect } from "@/src/components/ecommerce/sort-select";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/lib/generated/prisma";
 import type { Metadata } from "next";
 import { getProductosCatalogo } from "./actions";
 
