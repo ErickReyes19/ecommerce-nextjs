@@ -21,21 +21,19 @@ export async function getCartWithRecommendations(token?: string) {
   const cartProductIds = items.map((item) => item.productId);
   const cartCategoryIds = Array.from(new Set(items.map((item) => item.product.categoryId)));
 
-  const recommendedProducts = cartCategoryIds.length
-    ? await prisma.product.findMany({
-        where: {
-          active: true,
-          categoryId: { in: cartCategoryIds },
-          id: { notIn: cartProductIds.length ? cartProductIds : undefined },
-        },
-        include: {
-          category: { select: { name: true } },
-          images: { where: { isMain: true }, take: 1 },
-        },
-        take: 4,
-        orderBy: { createdAt: "desc" },
-      })
-    : [];
+  const recommendedProducts = await prisma.product.findMany({
+    where: {
+      active: true,
+      id: { notIn: cartProductIds.length ? cartProductIds : undefined },
+      ...(cartCategoryIds.length ? { categoryId: { in: cartCategoryIds } } : {}),
+    },
+    include: {
+      category: { select: { name: true } },
+      images: { where: { isMain: true }, take: 1 },
+    },
+    take: 4,
+    orderBy: { createdAt: "desc" },
+  });
 
   return { cart, recommendedProducts };
 }

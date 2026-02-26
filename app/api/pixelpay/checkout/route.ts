@@ -2,6 +2,7 @@ import { getSession } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import Settings from "@pixelpay/sdk-core/lib/models/Settings";
 import TransactionService from "@pixelpay/sdk-core/lib/services/Transaction";
 import { getOrCreateEcommerceUserBySessionUserId } from "@/src/lib/ecommerce-user";
@@ -427,6 +428,9 @@ export async function PUT(request: Request) {
       await tx.cartItem.deleteMany({ where: { cartId: metadata.cartId } });
     }
   });
+
+  revalidatePath("/carrito");
+  revalidatePath("/perfil");
 
   return NextResponse.json({ ok: true, orderId: payment.orderId });
 }
