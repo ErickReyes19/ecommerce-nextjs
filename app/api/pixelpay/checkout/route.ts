@@ -153,7 +153,7 @@ export async function GET(request: Request) {
   const shippingMethodId = searchParams.get("shippingMethodId") ?? "";
   const couponCode = searchParams.get("couponCode") ?? undefined;
 
-  if (!cartId || !shippingMethodId) {
+  if (!cartId) {
     return NextResponse.json({ ok: false, message: "Faltan datos para calcular totales" }, { status: 400 });
   }
 
@@ -162,8 +162,15 @@ export async function GET(request: Request) {
     include: { items: { include: { product: { select: { basePrice: true, categoryId: true } }, variant: true } } },
   });
 
-  const shippingMethod = await prisma.shippingMethod.findUnique({ where: { id: shippingMethodId } });
-  if (!cart || !shippingMethod || !shippingMethod.active) {
+  const shippingMethod = shippingMethodId
+    ? await prisma.shippingMethod.findUnique({ where: { id: shippingMethodId } })
+    : null;
+
+  if (!cart) {
+    return NextResponse.json({ ok: false, message: "No se pudo calcular el total" }, { status: 404 });
+  }
+
+  if (shippingMethodId && (!shippingMethod || !shippingMethod.active)) {
     return NextResponse.json({ ok: false, message: "No se pudo calcular el total" }, { status: 404 });
   }
 
@@ -177,7 +184,7 @@ export async function GET(request: Request) {
   });
 
   const subtotal = lines.reduce((acc, item) => acc + item.lineTotal, 0);
-  const shippingTotal = Number(shippingMethod.price);
+  const shippingTotal = Number(shippingMethod?.price ?? 0);
   const discount = await calculateDiscount(couponCode, { subtotal, items: lines });
   const grandTotal = Math.max(0, subtotal + shippingTotal - discount.discountTotal);
 
@@ -207,7 +214,7 @@ export async function POST(request: Request) {
     couponCode?: string;
   };
 
-  if (!body.cartId || !body.shippingMethodId) {
+  if (!body.cartId) {
     return NextResponse.json({ ok: false, message: "Faltan datos para inicializar checkout" }, { status: 400 });
   }
 
@@ -224,8 +231,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: "Carrito no autorizado" }, { status: 403 });
   }
 
-  const shippingMethod = await prisma.shippingMethod.findUnique({ where: { id: body.shippingMethodId } });
-  if (!shippingMethod || !shippingMethod.active) {
+  const shippingMethod = body.shippingMethodId
+    ? await prisma.shippingMethod.findUnique({ where: { id: body.shippingMethodId } })
+    : null;
+  if (body.shippingMethodId && (!shippingMethod || !shippingMethod.active)) {
     return NextResponse.json({ ok: false, message: "Método de envío no disponible" }, { status: 404 });
   }
 
@@ -238,7 +247,7 @@ export async function POST(request: Request) {
     };
   });
   const subtotal = lines.reduce((acc, item) => acc + item.lineTotal, 0);
-  const shippingTotal = Number(shippingMethod.price);
+  const shippingTotal = Number(shippingMethod?.price ?? 0);
   const discount = await calculateDiscount(body.couponCode, { subtotal, items: lines });
   const grandTotal = Math.max(0, subtotal + shippingTotal - discount.discountTotal);
 
