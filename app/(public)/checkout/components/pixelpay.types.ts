@@ -21,6 +21,16 @@ export type PixelPayCheckoutProps = {
   defaultAddress: string;
   defaultCity: string;
   subtotal: number;
+  onTotalsChange?: (totals: CheckoutTotals) => void;
+};
+
+export type CheckoutTotals = {
+  subtotal: number;
+  shippingTotal: number;
+  discountTotal: number;
+  grandTotal: number;
+  appliedCouponCode: string | null;
+  shippingMethodId: string;
 };
 
 export type BillingData = {
