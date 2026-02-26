@@ -37,12 +37,12 @@ export function ProductoForm({
 }) {
   const router = useRouter();
   const isUpdate = Boolean(initialData.id);
-  const form = useForm<z.infer<typeof productSchema>>({
+  const form = useForm<z.input<typeof productSchema>, unknown, ProductInput>({
     resolver: zodResolver(productSchema),
     defaultValues: initialData,
   });
 
-  async function onSubmit(data: z.infer<typeof productSchema>) {
+  async function onSubmit(data: ProductInput) {
     try {
       if (isUpdate) await updateProduct(data);
       else await createProduct(data);

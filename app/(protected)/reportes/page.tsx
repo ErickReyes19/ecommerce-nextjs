@@ -5,6 +5,7 @@ import { FileBarChart } from "lucide-react";
 import { formatHNL } from "@/src/lib/currency";
 import { getOrderStatusLabel } from "@/src/lib/order-status";
 import { getReportesData } from "./actions";
+import { ReportesCharts } from "./components/reportes-charts";
 
 export default async function AdminReportesPage() {
   const permisos = await getSessionPermisos();
@@ -13,9 +14,27 @@ export default async function AdminReportesPage() {
   const { orders, topProducts, productNames } = await getReportesData();
   const nameMap = new Map(productNames.map((p) => [p.id, p.name]));
 
+  const ventasMap = new Map<string, number>();
+  for (const order of orders) {
+    const fecha = order.createdAt.toLocaleDateString("es-HN", { day: "2-digit", month: "2-digit" });
+    ventasMap.set(fecha, (ventasMap.get(fecha) ?? 0) + Number(order.grandTotal));
+  }
+
+  const ventasPorDia = Array.from(ventasMap.entries())
+    .map(([fecha, total]) => ({ fecha, total }))
+    .reverse();
+
+  const topProductosChart = topProducts.map((product) => ({
+    nombre: nameMap.get(product.productId) ?? product.productId,
+    unidades: Number(product._sum.quantity ?? 0),
+  }));
+
+
   return (
     <div className="space-y-4">
       <HeaderComponent Icon={FileBarChart} description="Reporte detallado de movimientos de pedidos" screenName="Reportes" />
+
+      <ReportesCharts ventasPorDia={ventasPorDia} topProductos={topProductosChart} />
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Últimas operaciones</h2>
