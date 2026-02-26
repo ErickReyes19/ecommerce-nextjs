@@ -12,7 +12,12 @@ export default async function AdminProductosPage() {
   if (!permisos?.includes("ver_productos_admin")) return <NoAcceso />;
 
   const productos = await getProductos();
-  const data = productos.map((producto) => ({ ...producto, categoryName: producto.category.name }));
+  const data = productos.map((producto) => ({
+    ...producto,
+    basePrice: Number(producto.basePrice),
+    compareAtPrice: producto.compareAtPrice ? Number(producto.compareAtPrice) : null,
+    categoryName: producto.category.name,
+  }));
 
   return (
     <div className="container mx-auto py-2">
