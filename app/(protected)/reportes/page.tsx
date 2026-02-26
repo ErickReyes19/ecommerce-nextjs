@@ -1,25 +1,16 @@
+import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
-import { prisma } from "@/lib/prisma";
+import NoAcceso from "@/components/noAccess";
 import { FileBarChart } from "lucide-react";
 import { formatHNL } from "@/src/lib/currency";
 import { getOrderStatusLabel } from "@/src/lib/order-status";
+import { getReportesData } from "./actions";
 
 export default async function AdminReportesPage() {
-  const [orders, topProducts] = await Promise.all([
-    prisma.order.findMany({
-      select: { createdAt: true, grandTotal: true, orderNumber: true, status: true, discountTotal: true, shippingTotal: true },
-      orderBy: { createdAt: "desc" },
-      take: 30,
-    }),
-    prisma.orderItem.groupBy({
-      by: ["productId"],
-      _sum: { quantity: true, totalPrice: true },
-      orderBy: { _sum: { quantity: "desc" } },
-      take: 5,
-    }),
-  ]);
+  const permisos = await getSessionPermisos();
+  if (!permisos?.includes("ver_reportes_admin")) return <NoAcceso />;
 
-  const productNames = await prisma.product.findMany({ where: { id: { in: topProducts.map((item) => item.productId) } }, select: { id: true, name: true } });
+  const { orders, topProducts, productNames } = await getReportesData();
   const nameMap = new Map(productNames.map((p) => [p.id, p.name]));
 
   return (

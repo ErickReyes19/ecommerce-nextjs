@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import NoAcceso from "@/components/noAccess";
 import { formatHNL } from "@/src/lib/currency";
 import { getOrCreateEcommerceUserBySessionUserId } from "@/src/lib/ecommerce-user";
 import { getOrderStatusLabel } from "@/src/lib/order-status";
+import { getPerfilData } from "./actions";
 
 export default async function PerfilPage({
   searchParams,
@@ -15,6 +16,8 @@ export default async function PerfilPage({
   if (!session?.IdUser) {
     redirect("/login?callbackUrl=/perfil");
   }
+
+  if (!session.Permiso?.includes("ver_facturas")) return <NoAcceso />;
 
   const ecommerceUser = await getOrCreateEcommerceUserBySessionUserId(session.IdUser);
 
@@ -29,25 +32,7 @@ export default async function PerfilPage({
     );
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: ecommerceUser.id },
-    include: {
-      addresses: { orderBy: { createdAt: "desc" } },
-      orders: {
-        orderBy: { createdAt: "desc" },
-        include: {
-          items: {
-            include: {
-              product: { select: { name: true } },
-            },
-          },
-          payments: {
-            orderBy: { createdAt: "desc" },
-          },
-        },
-      },
-    },
-  });
+  const user = await getPerfilData(ecommerceUser.id);
 
   const paidReceipts =
     user?.orders

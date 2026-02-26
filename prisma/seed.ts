@@ -6,14 +6,20 @@ import { randomUUID } from "crypto";
 const prisma = new PrismaClient();
 
 const ADMIN_PERMISSIONS = [
-  "ver_permisos", "ver_roles", "crear_roles", "editar_roles",
+  "ver_dashboard",
+  "ver_productos_admin", "crear_productos_admin", "editar_productos_admin",
+  "ver_categorias_admin", "crear_categorias_admin", "editar_categorias_admin",
+  "ver_pedidos_admin", "crear_pedidos_admin", "editar_pedidos_admin",
+  "ver_cupones_admin", "crear_cupones_admin", "editar_cupones_admin",
+  "ver_metodos_envio_admin", "crear_metodos_envio_admin", "editar_metodos_envio_admin",
+  "ver_reportes_admin",
+  "ver_permisos", "crear_permisos", "editar_permisos",
+  "ver_roles", "crear_roles", "editar_roles",
   "ver_usuarios", "crear_usuario", "editar_usuario",
-  "ver_profile", "ver_dashboard",
-  "ver_productos_admin", "ver_categorias_admin", "ver_pedidos_admin",
-  "ver_cupones_admin", "ver_reportes_admin", "ver_facturas",
+  "ver_mi_perfil", "ver_facturas"
 ] as const;
 
-const CLIENT_PERMISSIONS = ["ver_mi_perfil", "ver_facturas"] as const;
+const CLIENT_PERMISSIONS = ["ver_tienda_inicio", "ver_tienda_productos", "ver_tienda_producto_detalle", "ver_carrito", "ver_checkout", "ver_mi_perfil", "ver_facturas"] as const;
 
 const categoryTree = [
   { name: "Electrónica", slug: "electronica", children: ["smartphones", "laptops"] },

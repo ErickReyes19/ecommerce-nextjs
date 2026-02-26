@@ -12,6 +12,15 @@ export async function getProductoById(id: string) {
   return prisma.product.findUnique({ where: { id }, include: { variants: { orderBy: { isDefault: "desc" } } } });
 }
 
+export async function getProductoFormOptions() {
+  const [categorias, marcas] = await Promise.all([
+    prisma.category.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.brand.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+  ]);
+
+  return { categorias, marcas };
+}
+
 export async function createProduct(data: ProductInput) {
   const parsed = productSchema.parse(data);
   await prisma.product.create({

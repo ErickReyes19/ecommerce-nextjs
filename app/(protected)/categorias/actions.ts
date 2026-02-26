@@ -12,6 +12,10 @@ export async function getCategoriaById(id: string) {
   return prisma.category.findUnique({ where: { id } });
 }
 
+export async function getCategoriasSelector() {
+  return prisma.category.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } });
+}
+
 export async function createCategoria(data: CategoriaInput) {
   const parsed = categoriaSchema.parse(data);
   await prisma.category.create({

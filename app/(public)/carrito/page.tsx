@@ -1,5 +1,4 @@
 import { cookies } from "next/headers";
-import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -12,6 +11,7 @@ import { CartLocalStorageSync } from "@/src/components/ecommerce/cart-local-stor
 import type { Metadata } from "next";
 import { formatHNL } from "@/src/lib/currency";
 import { ProductCard } from "@/src/components/ecommerce/product-card";
+import { getCartWithRecommendations } from "./actions";
 
 export const metadata: Metadata = {
   title: "Carrito | Tienda",
@@ -20,19 +20,7 @@ export const metadata: Metadata = {
 
 export default async function CarritoPage() {
   const token = cookies().get("guest_cart")?.value;
-  const cart = token
-    ? await prisma.cart.findUnique({
-        where: { token },
-        include: {
-          items: {
-            include: {
-              product: { include: { images: { where: { isMain: true }, take: 1 }, category: true } },
-              variant: true,
-            },
-          },
-        },
-      })
-    : null;
+  const { cart, recommendedProducts } = await getCartWithRecommendations(token);
 
   const items = cart?.items ?? [];
   const subtotal = items.reduce(
@@ -45,25 +33,6 @@ export default async function CarritoPage() {
     0
   );
 
-
-  const cartProductIds = items.map((item) => item.productId);
-  const cartCategoryIds = Array.from(new Set(items.map((item) => item.product.categoryId)));
-
-  const recommendedProducts = cartCategoryIds.length
-    ? await prisma.product.findMany({
-        where: {
-          isActive: true,
-          categoryId: { in: cartCategoryIds },
-          id: { notIn: cartProductIds.length ? cartProductIds : undefined },
-        },
-        include: {
-          category: { select: { name: true } },
-          images: { where: { isMain: true }, take: 1 },
-        },
-        take: 4,
-        orderBy: { createdAt: "desc" },
-      })
-    : [];
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-8">
