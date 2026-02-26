@@ -27,6 +27,10 @@ const ADMIN_PERMISSIONS = [
   "ver_metodos_envio_admin",
   "ver_cupones_admin",
   "ver_reportes_admin",
+  "ver_proveedores_admin",
+  "crear_proveedores_admin",
+  "editar_proveedores_admin",
+  "eliminar_proveedores_admin",
   "ver_facturas",
 ] as const;
 

@@ -14,6 +14,8 @@ export async function getProductDetail(slug: string) {
       images: { orderBy: { sortOrder: "asc" } },
       category: true,
       brand: true,
+      provider: true,
+      providerService: true,
       attributes: { include: { attribute: true, attributeValue: true } },
     },
   });

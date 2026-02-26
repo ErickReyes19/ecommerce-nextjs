@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { checkoutSchema } from "@/src/lib/ecommerce-schemas";
 import { revalidatePath } from "next/cache";
+import { dispatchOrderToProviders } from "@/src/lib/provider-dispatch";
 
 export async function createOrder(payload: unknown, cartId: string) {
   const parsed = checkoutSchema.safeParse(payload);
@@ -42,6 +43,8 @@ export async function createOrder(payload: unknown, cartId: string) {
       history: { create: { status: "PENDIENTE", note: "Orden creada desde checkout" } },
     },
   });
+
+  await dispatchOrderToProviders(order.id);
 
   revalidatePath("/perfil");
   return { ok: true, orderId: order.id };

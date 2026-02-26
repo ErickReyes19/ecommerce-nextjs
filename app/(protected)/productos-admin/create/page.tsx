@@ -9,7 +9,7 @@ export default async function CreateProductoPage() {
   const permisos = await getSessionPermisos();
   if (!permisos?.includes("crear_productos_admin")) return <NoAcceso />;
 
-  const { categorias, marcas } = await getProductoFormOptions();
+  const { categorias, marcas, proveedores } = await getProductoFormOptions();
 
   return (
     <div>
@@ -34,10 +34,15 @@ export default async function CreateProductoPage() {
           active: true,
           categoryId: "",
           brandId: null,
+          providerId: null,
+          providerServiceId: null,
+          externalProductId: null,
+          syncMetadata: null,
           imageUrls: "",
         }}
         categorias={categorias}
         marcas={marcas}
+        proveedores={proveedores}
       />
     </div>
   );
