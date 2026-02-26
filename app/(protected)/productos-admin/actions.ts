@@ -5,17 +5,33 @@ import { productSchema, ProductInput } from "./schema";
 import { revalidatePath } from "next/cache";
 
 export async function getProductos() {
-  return prisma.product.findMany({ include: { category: true, brand: true }, orderBy: { createdAt: "desc" }, take: 50 });
+  return prisma.product.findMany({
+    include: { category: true, brand: true },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
 }
 
 export async function getProductoById(id: string) {
-  return prisma.product.findUnique({ where: { id }, include: { variants: { orderBy: { isDefault: "desc" } } } });
+  return prisma.product.findUnique({
+    where: { id },
+    include: {
+      variants: { orderBy: { isDefault: "desc" } },
+      images: { orderBy: [{ isMain: "desc" }, { sortOrder: "asc" }] },
+    },
+  });
 }
 
 export async function getProductoFormOptions() {
   const [categorias, marcas] = await Promise.all([
-    prisma.category.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
-    prisma.brand.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.category.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.brand.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   return { categorias, marcas };
@@ -35,6 +51,17 @@ export async function createProduct(data: ProductInput) {
       compareAtPrice: parsed.compareAtPrice || null,
       categoryId: parsed.categoryId,
       brandId: parsed.brandId || null,
+      images: {
+        create: (parsed.imageUrls ?? "")
+          .split(/\r?\n/)
+          .map((url) => url.trim())
+          .filter(Boolean)
+          .map((url, index) => ({
+            url,
+            isMain: index === 0,
+            sortOrder: index,
+          })),
+      },
       variants: {
         create: {
           sku: `${parsed.sku}-DEFAULT`,
@@ -74,11 +101,35 @@ export async function updateProduct(data: ProductInput) {
       compareAtPrice: parsed.compareAtPrice || null,
       categoryId: parsed.categoryId,
       brandId: parsed.brandId || null,
+      images: {
+        deleteMany: {},
+        create: (parsed.imageUrls ?? "")
+          .split(/\r?\n/)
+          .map((url) => url.trim())
+          .filter(Boolean)
+          .map((url, index) => ({
+            url,
+            isMain: index === 0,
+            sortOrder: index,
+          })),
+      },
       variants: defaultVariant
         ? {
-          update: {
-            where: { id: defaultVariant.id },
-            data: {
+            update: {
+              where: { id: defaultVariant.id },
+              data: {
+                sku: `${parsed.sku}-DEFAULT`,
+                name: parsed.defaultVariantName,
+                price: parsed.basePrice,
+                salePrice: parsed.salePrice || null,
+                stock: parsed.stock,
+                weight: parsed.defaultVariantWeight || null,
+                isDefault: true,
+              },
+            },
+          }
+        : {
+            create: {
               sku: `${parsed.sku}-DEFAULT`,
               name: parsed.defaultVariantName,
               price: parsed.basePrice,
@@ -88,18 +139,6 @@ export async function updateProduct(data: ProductInput) {
               isDefault: true,
             },
           },
-        }
-        : {
-          create: {
-            sku: `${parsed.sku}-DEFAULT`,
-            name: parsed.defaultVariantName,
-            price: parsed.basePrice,
-            salePrice: parsed.salePrice || null,
-            stock: parsed.stock,
-            weight: parsed.defaultVariantWeight || null,
-            isDefault: true,
-          },
-        },
     },
   });
   revalidatePath("/productos-admin");
