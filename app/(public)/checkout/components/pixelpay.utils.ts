@@ -5,7 +5,7 @@ export function validateCheckoutInput(input: {
   card: CardData;
   billing: BillingData;
 }) {
-  const requiredCheckout: Array<keyof InitCheckoutPayload> = ["cartId", "shippingMethodId"];
+  const requiredCheckout: Array<keyof InitCheckoutPayload> = ["cartId"];
   for (const key of requiredCheckout) {
     if (!input.checkout[key]) {
       throw new Error(`Falta el campo obligatorio: ${key}`);

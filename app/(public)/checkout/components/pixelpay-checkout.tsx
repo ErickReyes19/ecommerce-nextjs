@@ -51,6 +51,8 @@ export function PixelPayCheckout({
   const [couponFeedback, setCouponFeedback] = useState<string | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
+  const hasShippingMethods = shippingMethods.length > 0;
+
   const selectedShipping = useMemo(
     () => shippingMethods.find((method) => method.id === shippingMethodId),
     [shippingMethodId, shippingMethods],
@@ -83,9 +85,8 @@ export function PixelPayCheckout({
   });
 
   const fetchTotals = useCallback(async (couponCode?: string) => {
-    if (!shippingMethodId) return false;
-
-    const params = new URLSearchParams({ cartId, shippingMethodId });
+    const params = new URLSearchParams({ cartId });
+    if (shippingMethodId) params.set("shippingMethodId", shippingMethodId);
     const normalizedCoupon = couponCode?.trim().toUpperCase();
     if (normalizedCoupon) params.set("couponCode", normalizedCoupon);
 
@@ -94,9 +95,6 @@ export function PixelPayCheckout({
 
     if (!response.ok || !payload.ok) {
       setCouponFeedback(normalizedCoupon ? "Cupón inválido o no disponible" : null);
-      if (!normalizedCoupon) {
-        setCouponCodeToValidate("");
-      }
       return false;
     }
 
@@ -113,7 +111,6 @@ export function PixelPayCheckout({
         setCouponFeedback("Cupón inválido o no disponible");
       }
     } else {
-      setCouponCodeToValidate("");
       setCouponFeedback(null);
     }
 
@@ -121,8 +118,8 @@ export function PixelPayCheckout({
   }, [cartId, shippingMethodId]);
 
   useEffect(() => {
-    fetchTotals(couponCodeToValidate).catch(() => null);
-  }, [shippingMethodId, couponCodeToValidate, fetchTotals]);
+    fetchTotals().catch(() => null);
+  }, [shippingMethodId, fetchTotals]);
 
   const departments = useMemo(() => {
     const stateMap = normalizeLocationMap(Locations.statesList(form.billing_country));
@@ -141,7 +138,7 @@ export function PixelPayCheckout({
         const response = await runPixelPayCheckout({
           checkout: {
             cartId,
-            shippingMethodId,
+            shippingMethodId: shippingMethodId || undefined,
             shippingPrice,
             addressId: form.addressId || undefined,
             couponCode: couponCodeToValidate || undefined,
@@ -187,7 +184,38 @@ export function PixelPayCheckout({
       </CardHeader>
       <CardContent>
         <form id="pixelpay-checkout-form" className="space-y-5" onSubmit={onSubmit}>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2 rounded-md border bg-muted/30 p-3 text-sm">
+            <div className="flex items-end gap-2">
+              <div className="flex-1 space-y-1">
+                <Label htmlFor="coupon">Cupón</Label>
+                <Input
+                  id="coupon"
+                  value={form.couponCode}
+                  placeholder="Ej: BIENVENIDA10"
+                  onChange={(e) => setForm((prev) => ({ ...prev, couponCode: e.target.value.toUpperCase() }))}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={async () => {
+                  const coupon = form.couponCode.trim().toUpperCase();
+                  setIsValidatingCoupon(true);
+                  const ok = await fetchTotals(coupon || undefined).catch(() => false);
+                  if (ok && coupon) toast.success("Cupón validado correctamente");
+                  if (!ok && coupon) toast.error("No se pudo aplicar el cupón");
+                  setIsValidatingCoupon(false);
+                }}
+                disabled={isValidatingCoupon}
+              >
+                {isValidatingCoupon ? "Validando..." : "Validar"}
+              </Button>
+            </div>
+            <div className="flex items-center justify-between text-emerald-700"><span>Descuento</span><span>- {moneyFormatter("HNL", totals.discountTotal)}</span></div>
+            {couponFeedback ? <p className={`text-xs ${totals.appliedCouponCode ? "text-emerald-700" : "text-destructive"}`}>{couponFeedback}</p> : null}
+          </div>
+
+          {hasShippingMethods ? (
             <div className="space-y-2">
               <Label>Método de envío</Label>
               <Select
@@ -210,48 +238,16 @@ export function PixelPayCheckout({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2 rounded-md border bg-muted/30 p-3 text-sm">
-              <p className="font-medium">Resumen del pedido</p>
-              <div className="flex items-center justify-between text-muted-foreground"><span>Subtotal</span><span>{moneyFormatter("HNL", totals.subtotal)}</span></div>
-              <div className="flex items-center justify-between text-muted-foreground"><span>Envío</span><span>{moneyFormatter("HNL", totals.shippingTotal)}</span></div>
-              <div className="flex items-end gap-2">
-                <div className="flex-1 space-y-1">
-                  <Label htmlFor="coupon">Cupón</Label>
-                  <Input
-                    id="coupon"
-                    value={form.couponCode}
-                    placeholder="Ej: BIENVENIDA10"
-                    onChange={(e) => setForm((prev) => ({ ...prev, couponCode: e.target.value.toUpperCase() }))}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={async () => {
-                    const coupon = form.couponCode.trim().toUpperCase();
-                    setIsValidatingCoupon(true);
-                    const ok = await fetchTotals(coupon || undefined).catch(() => false);
-                    if (ok && coupon) toast.success("Cupón validado correctamente");
-                    if (!ok && coupon) toast.error("No se pudo aplicar el cupón");
-                    setIsValidatingCoupon(false);
-                  }}
-                disabled={isValidatingCoupon || !shippingMethodId}
-                >
-                  {isValidatingCoupon ? "Validando..." : "Validar"}
-                </Button>
-              </div>
-              <div className="flex items-center justify-between text-emerald-700"><span>Descuento</span><span>- {moneyFormatter("HNL", totals.discountTotal)}</span></div>
-              <div className="flex items-center justify-between border-t pt-2 text-base font-semibold"><span>Total</span><span>{moneyFormatter("HNL", totals.grandTotal)}</span></div>
-              {couponFeedback ? <p className={`text-xs ${totals.appliedCouponCode ? "text-emerald-700" : "text-destructive"}`}>{couponFeedback}</p> : null}
-            </div>
-          </div>
+          ) : null}
 
-          <div className="rounded-md border p-3 text-sm">
-            <p className="font-medium">Resumen de envío</p>
-            <p className="text-muted-foreground">
-              {selectedShipping ? `${selectedShipping.name} · ${moneyFormatter("HNL", shippingPrice)}` : "Sin envío"}
-            </p>
-          </div>
+          {hasShippingMethods ? (
+            <div className="rounded-md border p-3 text-sm">
+              <p className="font-medium">Resumen de envío</p>
+              <p className="text-muted-foreground">
+                {selectedShipping ? `${selectedShipping.name} · ${moneyFormatter("HNL", shippingPrice)}` : "Sin envío"}
+              </p>
+            </div>
+          ) : null}
 
           <Separator />
 
@@ -307,7 +303,7 @@ export function PixelPayCheckout({
             </div>
           </div>
 
-          <button type="submit" hidden disabled={isPending || !shippingMethodId} />
+          <button type="submit" hidden disabled={isPending} />
         </form>
       </CardContent>
     </Card>

@@ -45,7 +45,7 @@ export type CardData = {
 
 export type InitCheckoutPayload = {
   cartId: string;
-  shippingMethodId: string;
+  shippingMethodId?: string;
   shippingPrice?: number;
   addressId?: string;
   couponCode?: string;
