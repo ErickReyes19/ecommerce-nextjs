@@ -25,6 +25,17 @@ export default async function CheckoutPage() {
     0,
   );
 
+  const discountTotal = cart.items.reduce((acc, item) => {
+    const baseUnit = Number(item.variant?.price ?? item.product.basePrice);
+    const effectiveUnit = Number(item.variant?.salePrice ?? item.variant?.price ?? item.product.basePrice);
+    const unitDiscount = Math.max(baseUnit - effectiveUnit, 0);
+    return acc + unitDiscount * item.quantity;
+  }, 0);
+
+  const defaultShippingMethod = methods[0];
+  const shippingTotal = Number(defaultShippingMethod?.price ?? 0);
+  const estimatedGrandTotal = subtotal + shippingTotal;
+
   return (
     <main className="container mx-auto space-y-6 px-4 py-8">
       <h1 className="text-3xl font-bold">Checkout</h1>
@@ -56,9 +67,23 @@ export default async function CheckoutPage() {
                 </div>
               );
             })}
+            <div className="flex items-center justify-between border-t pt-2">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span className="font-medium">{moneyFormatter("HNL", subtotal)}</span>
+            </div>
+            <div className="flex items-center justify-between text-emerald-700">
+              <span>Rebaja</span>
+              <span>- {moneyFormatter("HNL", discountTotal)}</span>
+            </div>
+            <div className="space-y-1 rounded-md border p-2">
+              <p className="text-muted-foreground">Método de envío</p>
+              <p className="font-medium">
+                {defaultShippingMethod ? `${defaultShippingMethod.name} · ${moneyFormatter("HNL", shippingTotal)}` : "Sin método de envío"}
+              </p>
+            </div>
             <div className="flex items-center justify-between border-t pt-2 text-base font-semibold">
-              <span>Total</span>
-              <span>{moneyFormatter("HNL", subtotal)}</span>
+              <span>Total estimado</span>
+              <span>{moneyFormatter("HNL", estimatedGrandTotal)}</span>
             </div>
             <Button type="submit" form="pixelpay-checkout-form" className="w-full">
               Pagar con PixelPay
