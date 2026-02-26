@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { getSession } from "@/auth";
 import { redirect } from "next/navigation";
 import { PixelPayCheckout } from "./components/pixelpay-checkout";
+import { moneyFormatter } from "./components/pixelpay.utils";
 import { getCheckoutData } from "./actions";
 
 export default async function CheckoutPage() {
@@ -25,16 +26,44 @@ export default async function CheckoutPage() {
   return (
     <main className="container mx-auto space-y-6 px-4 py-8">
       <h1 className="text-3xl font-bold">Checkout</h1>
-      <PixelPayCheckout
-        cartId={cart.id}
-        defaultCustomerName={currentUser?.nombre ?? session.Nombre ?? ""}
-        defaultCustomerEmail={currentUser?.email ?? ""}
-        defaultPhone={currentUser?.telefono ?? ""}
-        defaultAddress={currentUser?.direccion ?? ""}
-        defaultCity={currentUser?.ciudad ?? ""}
-        shippingMethods={methods.map((method) => ({ id: method.id, name: method.name, price: Number(method.price) }))}
-        subtotal={subtotal}
-      />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <PixelPayCheckout
+          cartId={cart.id}
+          defaultCustomerName={currentUser?.nombre ?? session.Nombre ?? ""}
+          defaultCustomerEmail={currentUser?.email ?? ""}
+          defaultPhone={currentUser?.telefono ?? ""}
+          defaultAddress={currentUser?.direccion ?? ""}
+          defaultCity={currentUser?.ciudad ?? ""}
+          shippingMethods={methods.map((method) => ({ id: method.id, name: method.name, price: Number(method.price) }))}
+          subtotal={subtotal}
+        />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Resumen</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {cart.items.map((item) => {
+              const unit = Number(item.variant?.salePrice ?? item.variant?.price ?? item.product.basePrice);
+              return (
+                <div key={item.id} className="flex items-center justify-between gap-3">
+                  <p className="line-clamp-1 text-muted-foreground">
+                    {item.product.name} x{item.quantity}
+                  </p>
+                  <p className="font-medium">{moneyFormatter("HNL", unit * item.quantity)}</p>
+                </div>
+              );
+            })}
+            <div className="flex items-center justify-between border-t pt-2 text-base font-semibold">
+              <span>Total</span>
+              <span>{moneyFormatter("HNL", subtotal)}</span>
+            </div>
+            <Button type="submit" form="pixelpay-checkout-form" className="w-full">
+              Pagar con PixelPay
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </main>
   );
 }
