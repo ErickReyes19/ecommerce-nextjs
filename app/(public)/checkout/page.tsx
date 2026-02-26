@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { PixelPayCheckout } from "./components/pixelpay-checkout";
 import { moneyFormatter } from "./components/pixelpay.utils";
 import { getCheckoutData } from "./actions";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default async function CheckoutPage() {
   const session = await getSession();
