@@ -36,6 +36,7 @@ export default async function EditProveedorPage({ params }: { params: Promise<{ 
             apiKey: service.apiKey ?? "",
             secretKey: service.secretKey ?? "",
             headersJson: service.headersJson ?? "",
+            productMappingJson: service.productMappingJson ?? "",
             active: service.active,
           })),
         }}

@@ -45,7 +45,7 @@ export function ProveedorForm({ initialData }: { initialData: ProveedorInput }) 
       </div>
 
       <div className="space-y-4 rounded-md border p-4">
-        <div className="flex items-center justify-between"><h3 className="font-semibold">Servicios</h3><Button type="button" variant="outline" onClick={() => services.append({ name: "", baseUrl: "", productEndpoint: "/products", orderEndpoint: "/orders", authType: "BEARER", token: "", apiKey: "", secretKey: "", headersJson: "", active: true })}><Plus className="mr-2 h-4 w-4" />Agregar servicio</Button></div>
+        <div className="flex items-center justify-between"><h3 className="font-semibold">Servicios</h3><Button type="button" variant="outline" onClick={() => services.append({ name: "", baseUrl: "", productEndpoint: "/products", orderEndpoint: "/orders", authType: "BEARER", token: "", apiKey: "", secretKey: "", headersJson: "", productMappingJson: "", active: true })}><Plus className="mr-2 h-4 w-4" />Agregar servicio</Button></div>
         {services.fields.map((service, index) => (
           <div key={service.id} className="space-y-4 rounded-md border p-3">
             <div className="grid gap-3 md:grid-cols-2">
@@ -59,6 +59,7 @@ export function ProveedorForm({ initialData }: { initialData: ProveedorInput }) 
               <Controller name={`services.${index}.secretKey`} control={form.control} render={({ field }) => <Field><FieldLabel>Secret Key</FieldLabel><FieldContent><Input {...field} value={field.value ?? ""} /></FieldContent></Field>} />
             </div>
             <Controller name={`services.${index}.headersJson`} control={form.control} render={({ field }) => <Field><FieldLabel>Headers extra (JSON)</FieldLabel><FieldContent><Textarea {...field} value={field.value ?? ""} placeholder='{"x-store":"main"}' /></FieldContent></Field>} />
+            <Controller name={`services.${index}.productMappingJson`} control={form.control} render={({ field }) => <Field><FieldLabel>Mapeo de propiedades (JSON)</FieldLabel><FieldContent><Textarea {...field} value={field.value ?? ""} placeholder='{"name":"title","description":"body","price":"pricing.amount","stock":"inventory.available","image":"media.main.url"}' /></FieldContent></Field>} />
             <div className="flex items-center justify-between">
               <Controller name={`services.${index}.active`} control={form.control} render={({ field }) => <Field orientation="horizontal" className="justify-between"><FieldLabel>Servicio activo</FieldLabel><FieldContent><Switch checked={field.value} onCheckedChange={(checked) => field.onChange(Boolean(checked))} /></FieldContent></Field>} />
               <Button type="button" variant="destructive" size="sm" onClick={() => services.remove(index)} disabled={services.fields.length <= 1}><Trash2 className="mr-2 h-4 w-4" />Eliminar</Button>
