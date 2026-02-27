@@ -4,6 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { ProveedorInput, proveedorSchema } from "./schema";
 
+type ServiceConnectionInput = {
+  baseUrl: string;
+  productEndpoint: string;
+  authType: string;
+  token?: string | null;
+  apiKey?: string | null;
+  headersJson?: string | null;
+};
+
 export async function getProveedores() {
   return prisma.provider.findMany({
     include: { services: true },
@@ -64,6 +73,46 @@ function parseJsonObject(value: string | null | undefined): Record<string, unkno
   } catch {
     return {};
   }
+}
+
+function buildServiceHeaders(service: ServiceConnectionInput): Record<string, string> {
+  const extraHeaders = parseJsonObject(service.headersJson);
+  return {
+    Accept: "application/json",
+    ...(service.authType.toUpperCase() === "BEARER" && service.token ? { Authorization: `Bearer ${service.token}` } : {}),
+    ...(service.authType.toUpperCase() === "API_KEY" && service.apiKey ? { "x-api-key": service.apiKey } : {}),
+    ...Object.fromEntries(Object.entries(extraHeaders).filter(([, v]) => typeof v === "string") as Array<[string, string]>),
+  };
+}
+
+function flattenObjectPaths(
+  value: unknown,
+  prefix = "",
+  depth = 0,
+  output: Array<{ path: string; type: string; sample: string }> = [],
+) {
+  if (!value || typeof value !== "object" || depth > 3) return output;
+
+  for (const [key, nestedValue] of Object.entries(value as Record<string, unknown>)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+    const type = Array.isArray(nestedValue) ? "array" : typeof nestedValue;
+
+    if (nestedValue === null || ["string", "number", "boolean"].includes(typeof nestedValue)) {
+      output.push({ path, type, sample: `${nestedValue ?? "null"}`.slice(0, 80) });
+      continue;
+    }
+
+    if (Array.isArray(nestedValue)) {
+      output.push({ path, type, sample: `[${nestedValue.length}]` });
+      const first = nestedValue[0];
+      if (first && typeof first === "object") flattenObjectPaths(first, `${path}[0]`, depth + 1, output);
+      continue;
+    }
+
+    flattenObjectPaths(nestedValue, path, depth + 1, output);
+  }
+
+  return output;
 }
 
 function readPath(data: Record<string, unknown>, pathOrName: string): unknown {
@@ -132,15 +181,9 @@ export async function syncProveedorProductos(providerId: string) {
   for (const service of provider.services) {
     try {
       const mapping = parseJsonObject(service.productMappingJson);
-      const extraHeaders = parseJsonObject(service.headersJson);
       const response = await fetch(`${service.baseUrl}${service.productEndpoint}`, {
         method: "GET",
-        headers: {
-          Accept: "application/json",
-          ...(service.authType.toUpperCase() === "BEARER" && service.token ? { Authorization: `Bearer ${service.token}` } : {}),
-          ...(service.authType.toUpperCase() === "API_KEY" && service.apiKey ? { "x-api-key": service.apiKey } : {}),
-          ...Object.fromEntries(Object.entries(extraHeaders).filter(([, v]) => typeof v === "string") as Array<[string, string]>),
-        },
+        headers: buildServiceHeaders(service),
         cache: "no-store",
       });
 
@@ -238,6 +281,44 @@ export async function syncProveedorProductos(providerId: string) {
   revalidatePath("/productos-admin");
 
   return { ok: true, synced, errors };
+}
+
+export async function inspectProveedorServiceProducts(input: ServiceConnectionInput) {
+  try {
+    const response = await fetch(`${input.baseUrl}${input.productEndpoint}`, {
+      method: "GET",
+      headers: buildServiceHeaders(input),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return { ok: false, error: `No se pudo consultar el endpoint (HTTP ${response.status})` };
+    }
+
+    const raw = await response.json();
+    const items = pickArray(raw);
+    const sample = items[0];
+
+    if (!sample || typeof sample !== "object") {
+      return { ok: false, error: "No se encontró un objeto de producto en la respuesta." };
+    }
+
+    const fields = flattenObjectPaths(sample)
+      .filter((field) => !field.path.includes("[0]"))
+      .slice(0, 120);
+
+    return {
+      ok: true,
+      fields,
+      totalItems: items.length,
+      sample: JSON.stringify(sample, null, 2).slice(0, 4000),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Error no controlado consultando el servicio.",
+    };
+  }
 }
 
 export async function createProveedor(data: ProveedorInput) {
