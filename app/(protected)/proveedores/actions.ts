@@ -245,6 +245,20 @@ async function findOrCreateCategoryId(categoryName: string | null, fallbackCateg
   return category.id;
 }
 
+
+async function buildUniqueProductSlug(baseSlug: string) {
+  const normalized = toSlug(baseSlug) || "producto";
+  const MAX_ATTEMPTS = 100;
+
+  for (let i = 0; i < MAX_ATTEMPTS; i += 1) {
+    const candidate = i === 0 ? normalized : `${normalized}-${i + 1}`;
+    const existing = await prisma.product.findUnique({ where: { slug: candidate }, select: { id: true } });
+    if (!existing) return candidate;
+  }
+
+  return `${normalized}-${Date.now()}`;
+}
+
 async function upsertProductMainImage(productId: string, imageUrl: string) {
   if (!imageUrl) return;
 
@@ -304,12 +318,22 @@ export async function syncProveedorProductos(providerId: string) {
         if (!mapped) continue;
 
         const categoryId = await findOrCreateCategoryId(mapped.categoryName, fallbackCategory.id);
-        const slug = `${mapped.slugBase}-${service.id.slice(0, 4)}-${toSlug(mapped.externalProductId)}`;
+        const slugBase = `${mapped.slugBase}-${service.id.slice(0, 4)}-${toSlug(mapped.externalProductId)}`;
 
-        const existing = await prisma.product.findFirst({
+        const existingByExternalId = await prisma.product.findFirst({
           where: { providerServiceId: service.id, externalProductId: mapped.externalProductId },
           include: { variants: { where: { isDefault: true }, take: 1 } },
         });
+
+        const existingBySlug = existingByExternalId
+          ? null
+          : await prisma.product.findUnique({
+              where: { slug: slugBase },
+              include: { variants: { where: { isDefault: true }, take: 1 } },
+            });
+
+        const existing = existingByExternalId ?? existingBySlug;
+        const productSlug = existing ? existing.slug : await buildUniqueProductSlug(slugBase);
 
         const product = existing
           ? await prisma.product.update({
@@ -329,7 +353,7 @@ export async function syncProveedorProductos(providerId: string) {
           : await prisma.product.create({
               data: {
                 name: mapped.name,
-                slug,
+                slug: productSlug,
                 description: mapped.description,
                 shortDescription: mapped.description,
                 sku: mapped.sku,
