@@ -12,20 +12,22 @@ function SyncProveedorButton({ proveedorId }: { proveedorId: string }) {
   const [isPending, startTransition] = useTransition();
 
   const handleSync = () => {
-    startTransition(async () => {
-      const result = await syncProveedorProductos(proveedorId);
+    startTransition(() => {
+      void (async () => {
+        const result = await syncProveedorProductos(proveedorId);
 
-      if (!result?.ok) {
-        toast.error(result?.error ?? "No se pudo sincronizar el proveedor.");
-        return;
-      }
+        if (!result.ok) {
+          toast.error(result.error ?? "No se pudo sincronizar el proveedor.");
+          return;
+        }
 
-      if (result.errors.length > 0) {
-        toast.warning(`Sincronización parcial: ${result.synced} productos actualizados. ${result.errors.join(" · ")}`);
-        return;
-      }
+        if (result.errors.length > 0) {
+          toast.warning(`Sincronización parcial: ${result.synced} productos actualizados. ${result.errors.join(" · ")}`);
+          return;
+        }
 
-      toast.success(`Sincronización completada: ${result.synced} productos actualizados.`);
+        toast.success(`Sincronización completada: ${result.synced} productos actualizados.`);
+      })();
     });
   };
 
