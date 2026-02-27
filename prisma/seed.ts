@@ -22,6 +22,7 @@ const ADMIN_PERMISSIONS = [
   "ver_profile",
   "ver_dashboard",
   "ver_productos_admin",
+  "crear_productos_admin",
   "ver_categorias_admin",
   "ver_pedidos_admin",
   "ver_metodos_envio_admin",
