@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { ProveedorInput, proveedorSchema } from "./schema";
+import { isValidImageUrl } from "@/src/lib/image-url";
 
 type ServiceConnectionInput = {
   baseUrl: string;
@@ -195,6 +196,22 @@ function pickValue(data: Record<string, unknown>, field: string, fallbacks: stri
   return undefined;
 }
 
+function extractValidImageUrls(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .flatMap((entry) => extractValidImageUrls(entry))
+      .filter((url, index, array) => array.indexOf(url) === index);
+  }
+
+  if (typeof value !== "string") return [];
+
+  return value
+    .split(/[\r\n,]+/)
+    .map((url) => url.trim())
+    .filter((url) => isValidImageUrl(url))
+    .filter((url, index, array) => array.indexOf(url) === index);
+}
+
 function mapProviderProduct(data: Record<string, unknown>, serviceId: string, mapping: Record<string, unknown>) {
   // Local product IDs are generated automatically in DB (UUID/CUID); only provider IDs are mapped.
   const externalProductId = String(pickValue(data, "externalProductId", ["id", "externalId", "productId"], mapping) ?? "").trim();
@@ -205,7 +222,8 @@ function mapProviderProduct(data: Record<string, unknown>, serviceId: string, ma
   const basePrice = pickNumericValue(data, "price", ["price", "basePrice", "unitPrice", "precio", "precioBase", "amount", "regularPrice", "regular_price"], mapping, 0);
   const stock = Math.max(0, Math.floor(toNumber(pickValue(data, "stock", ["stock", "quantity", "inventory"], mapping), 0)));
   const description = String(pickValue(data, "description", ["description", "shortDescription"], mapping) ?? name).trim();
-  const imageUrl = String(pickValue(data, "image", ["image", "imageUrl", "thumbnail"], mapping) ?? "").trim();
+  const imageValue = pickValue(data, "image", ["image", "imageUrl", "thumbnail", "images"], mapping);
+  const imageUrls = extractValidImageUrls(imageValue);
   const rawSlug = String(pickValue(data, "slug", ["slug"], mapping) ?? name).trim();
   const rating = Math.max(0, Math.min(5, toNumber(pickValue(data, "rating", ["rating", "ranking", "rank", "score", "stars", "valoracion"], mapping), 0)));
   const rawCategory = pickValue(
@@ -223,7 +241,8 @@ function mapProviderProduct(data: Record<string, unknown>, serviceId: string, ma
     basePrice,
     stock,
     description,
-    imageUrl,
+    imageUrls,
+    imageUrlsCsv: imageUrls.join(", "),
     rating,
     categoryName,
     slugBase: toSlug(rawSlug) || `producto-${externalProductId}`,
@@ -259,21 +278,17 @@ async function buildUniqueProductSlug(baseSlug: string) {
   return `${normalized}-${Date.now()}`;
 }
 
-async function upsertProductMainImage(productId: string, imageUrl: string) {
-  if (!imageUrl) return;
+async function syncProductImages(productId: string, imageUrls: string[]) {
+  if (imageUrls.length === 0) return;
 
-  const existingMain = await prisma.productImage.findFirst({
-    where: { productId, isMain: true },
-    select: { id: true },
-  });
-
-  if (existingMain) {
-    await prisma.productImage.update({ where: { id: existingMain.id }, data: { url: imageUrl } });
-    return;
-  }
-
-  await prisma.productImage.create({
-    data: { productId, url: imageUrl, isMain: true, sortOrder: 0 },
+  await prisma.productImage.deleteMany({ where: { productId } });
+  await prisma.productImage.createMany({
+    data: imageUrls.map((url, index) => ({
+      productId,
+      url,
+      isMain: index === 0,
+      sortOrder: index,
+    })),
   });
 }
 
@@ -347,7 +362,7 @@ export async function syncProveedorProductos(providerId: string) {
                 rating: mapped.rating,
                 categoryId,
                 active: true,
-                syncMetadata: JSON.stringify(item),
+                syncMetadata: JSON.stringify({ ...item, image: mapped.imageUrlsCsv }),
               },
             })
           : await prisma.product.create({
@@ -364,10 +379,14 @@ export async function syncProveedorProductos(providerId: string) {
                 providerId: provider.id,
                 providerServiceId: service.id,
                 externalProductId: mapped.externalProductId,
-                syncMetadata: JSON.stringify(item),
-                images: mapped.imageUrl
+                syncMetadata: JSON.stringify({ ...item, image: mapped.imageUrlsCsv }),
+                images: mapped.imageUrls.length > 0
                   ? {
-                      create: [{ url: mapped.imageUrl, isMain: true, sortOrder: 0 }],
+                      create: mapped.imageUrls.map((url, index) => ({
+                        url,
+                        isMain: index === 0,
+                        sortOrder: index,
+                      })),
                     }
                   : undefined,
               },
@@ -398,7 +417,7 @@ export async function syncProveedorProductos(providerId: string) {
             });
         }
 
-        await upsertProductMainImage(product.id, mapped.imageUrl);
+        await syncProductImages(product.id, mapped.imageUrls);
 
         synced += 1;
       }
