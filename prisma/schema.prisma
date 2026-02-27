@@ -239,6 +239,7 @@ model Product {
   sku              String             @unique
   active           Boolean            @default(true)
   basePrice        Decimal            @db.Decimal(10, 2)
+  rating           Decimal            @default(0) @db.Decimal(3, 2)
   compareAtPrice   Decimal?           @db.Decimal(10, 2)
   brandId          String?
   categoryId       String
@@ -445,6 +446,7 @@ model ProviderService {
   apiKey            String?
   secretKey         String?
   headersJson       String?            @db.Text
+  productMappingJson String?           @db.Text
   active            Boolean            @default(true)
   provider          Provider           @relation(fields: [providerId], references: [id], onDelete: Cascade)
   products          Product[]

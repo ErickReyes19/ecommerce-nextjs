@@ -11,7 +11,7 @@ export default async function CreateProveedorPage() {
   return (
     <div>
       <HeaderComponent Icon={PlusCircle} description="Crea un proveedor y sus integraciones" screenName="Crear Proveedor" />
-      <ProveedorForm initialData={{ name: "", slug: "", description: "", type: "API", active: true, services: [{ name: "", baseUrl: "", productEndpoint: "/products", orderEndpoint: "/orders", authType: "BEARER", token: "", apiKey: "", secretKey: "", headersJson: "", active: true }] }} />
+      <ProveedorForm initialData={{ name: "", slug: "", description: "", type: "API", active: true, services: [{ name: "", baseUrl: "", productEndpoint: "/products", orderEndpoint: "/orders", authType: "BEARER", token: "", apiKey: "", secretKey: "", headersJson: "", productMappingJson: "", active: true }] }} />
     </div>
   );
 }

@@ -149,6 +149,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, message: "Sesión inválida" }, { status: 401 });
   }
 
+  const ecommerceUser = await getOrCreateEcommerceUserBySessionUserId(session.IdUser);
+
   const { searchParams } = new URL(request.url);
   const cartId = searchParams.get("cartId") ?? "";
   const shippingMethodId = searchParams.get("shippingMethodId") ?? "";
@@ -169,6 +171,13 @@ export async function GET(request: Request) {
 
   if (!cart) {
     return NextResponse.json({ ok: false, message: "No se pudo calcular el total" }, { status: 404 });
+  }
+
+  const guestToken = cookies().get("guest_cart")?.value;
+  const isGuestCartAuthorized = Boolean(cart.token && guestToken && cart.token === guestToken);
+  const isUserCartAuthorized = Boolean(ecommerceUser?.id && cart.userId === ecommerceUser.id);
+  if (!isGuestCartAuthorized && !isUserCartAuthorized) {
+    return NextResponse.json({ ok: false, message: "Carrito no autorizado" }, { status: 403 });
   }
 
   if (shippingMethodId && (!shippingMethod || !shippingMethod.active)) {
@@ -211,13 +220,14 @@ export async function POST(request: Request) {
     cartId?: string;
     shippingMethodId?: string;
     addressId?: string;
-    shippingPrice?: number;
     couponCode?: string;
   };
 
   if (!body.cartId) {
     return NextResponse.json({ ok: false, message: "Faltan datos para inicializar checkout" }, { status: 400 });
   }
+
+  const ecommerceUser = await getOrCreateEcommerceUserBySessionUserId(session.IdUser);
 
   const cart = await prisma.cart.findUnique({
     where: { id: body.cartId },
@@ -228,7 +238,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: "Carrito vacío" }, { status: 404 });
   }
   const guestToken = cookies().get("guest_cart")?.value;
-  if (cart.token && guestToken && cart.token !== guestToken) {
+  const isGuestCartAuthorized = Boolean(cart.token && guestToken && cart.token === guestToken);
+  const isUserCartAuthorized = Boolean(ecommerceUser?.id && cart.userId === ecommerceUser.id);
+  if (!isGuestCartAuthorized && !isUserCartAuthorized) {
     return NextResponse.json({ ok: false, message: "Carrito no autorizado" }, { status: 403 });
   }
 
@@ -253,7 +265,6 @@ export async function POST(request: Request) {
   const grandTotal = Math.max(0, subtotal + shippingTotal - discount.discountTotal);
 
   const reference = `PIX-${Date.now()}`;
-  const ecommerceUser = await getOrCreateEcommerceUserBySessionUserId(session.IdUser);
 
   const order = await prisma.order.create({
     data: {
@@ -395,6 +406,18 @@ export async function PUT(request: Request) {
         await tx.productVariant.update({
           where: { id: item.variantId },
           data: { stock: { decrement: item.quantity } },
+        });
+      } else {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: {
+            variants: {
+              updateMany: {
+                where: { isDefault: true },
+                data: { stock: { decrement: item.quantity } },
+              },
+            },
+          },
         });
       }
     }

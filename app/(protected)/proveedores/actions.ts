@@ -56,6 +56,62 @@ function toSlug(input: string) {
     .slice(0, 80);
 }
 
+function parseJsonObject(value: string | null | undefined): Record<string, unknown> {
+  if (!value?.trim()) return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function readPath(data: Record<string, unknown>, pathOrName: string): unknown {
+  if (!pathOrName) return undefined;
+  if (pathOrName in data) return data[pathOrName];
+
+  return pathOrName.split(".").reduce<unknown>((acc, key) => {
+    if (!acc || typeof acc !== "object") return undefined;
+    return (acc as Record<string, unknown>)[key];
+  }, data);
+}
+
+function pickValue(data: Record<string, unknown>, field: string, fallbacks: string[], mapping: Record<string, unknown>) {
+  const mapped = typeof mapping[field] === "string" ? readPath(data, mapping[field] as string) : undefined;
+  if (mapped !== undefined && mapped !== null && `${mapped}`.trim() !== "") return mapped;
+  for (const key of fallbacks) {
+    const value = readPath(data, key);
+    if (value !== undefined && value !== null && `${value}`.trim() !== "") return value;
+  }
+  return undefined;
+}
+
+function mapProviderProduct(data: Record<string, unknown>, serviceId: string, mapping: Record<string, unknown>) {
+  const externalProductId = String(pickValue(data, "externalProductId", ["id", "externalId", "productId"], mapping) ?? "").trim();
+  if (!externalProductId) return null;
+
+  const name = String(pickValue(data, "name", ["name", "title"], mapping) ?? `Producto ${externalProductId}`).trim();
+  const sku = String(pickValue(data, "sku", ["sku"], mapping) ?? `PRV-${serviceId.slice(0, 6)}-${externalProductId}`).trim();
+  const basePrice = toNumber(pickValue(data, "price", ["price", "basePrice", "unitPrice"], mapping), 0);
+  const stock = Math.max(0, Math.floor(toNumber(pickValue(data, "stock", ["stock", "quantity", "inventory"], mapping), 0)));
+  const description = String(pickValue(data, "description", ["description", "shortDescription"], mapping) ?? name).trim();
+  const imageUrl = String(pickValue(data, "image", ["image", "imageUrl", "thumbnail"], mapping) ?? "").trim();
+  const rawSlug = String(pickValue(data, "slug", ["slug"], mapping) ?? name).trim();
+  const rating = Math.max(0, Math.min(5, toNumber(pickValue(data, "rating", ["rating"], mapping), 0)));
+
+  return {
+    externalProductId,
+    name,
+    sku,
+    basePrice,
+    stock,
+    description,
+    imageUrl,
+    rating,
+    slugBase: toSlug(rawSlug) || `producto-${externalProductId}`,
+  };
+}
+
 export async function syncProveedorProductos(providerId: string) {
   const provider = await prisma.provider.findUnique({
     where: { id: providerId },
@@ -75,12 +131,15 @@ export async function syncProveedorProductos(providerId: string) {
 
   for (const service of provider.services) {
     try {
+      const mapping = parseJsonObject(service.productMappingJson);
+      const extraHeaders = parseJsonObject(service.headersJson);
       const response = await fetch(`${service.baseUrl}${service.productEndpoint}`, {
         method: "GET",
         headers: {
           Accept: "application/json",
           ...(service.authType.toUpperCase() === "BEARER" && service.token ? { Authorization: `Bearer ${service.token}` } : {}),
           ...(service.authType.toUpperCase() === "API_KEY" && service.apiKey ? { "x-api-key": service.apiKey } : {}),
+          ...Object.fromEntries(Object.entries(extraHeaders).filter(([, v]) => typeof v === "string") as Array<[string, string]>),
         },
         cache: "no-store",
       });
@@ -97,22 +156,13 @@ export async function syncProveedorProductos(providerId: string) {
         const item = items[index];
         if (!item || typeof item !== "object") continue;
 
-        const data = item as Record<string, unknown>;
-        const externalProductId = String(data.id ?? data.externalId ?? data.productId ?? "").trim();
-        if (!externalProductId) continue;
+        const mapped = mapProviderProduct(item as Record<string, unknown>, service.id, mapping);
+        if (!mapped) continue;
 
-        const name = String(data.name ?? data.title ?? `Producto ${externalProductId}`).trim();
-        const sku = String(data.sku ?? `PRV-${service.id.slice(0, 6)}-${externalProductId}`).trim();
-        const basePrice = toNumber(data.price ?? data.basePrice ?? data.unitPrice, 0);
-        const stock = Math.max(0, Math.floor(toNumber(data.stock ?? data.quantity ?? data.inventory, 0)));
-        const description = String(data.description ?? data.shortDescription ?? name).trim();
-        const imageUrl = String(data.image ?? data.imageUrl ?? data.thumbnail ?? "").trim();
-
-        const slugBase = toSlug(String(data.slug ?? name)) || `producto-${externalProductId}`;
-        const slug = `${slugBase}-${service.id.slice(0, 4)}-${index}`;
+        const slug = `${mapped.slugBase}-${service.id.slice(0, 4)}-${index}`;
 
         const existing = await prisma.product.findFirst({
-          where: { providerServiceId: service.id, externalProductId },
+          where: { providerServiceId: service.id, externalProductId: mapped.externalProductId },
           include: { variants: { where: { isDefault: true }, take: 1 } },
         });
 
@@ -120,31 +170,33 @@ export async function syncProveedorProductos(providerId: string) {
           ? await prisma.product.update({
               where: { id: existing.id },
               data: {
-                name,
-                description,
-                shortDescription: description,
-                basePrice,
+                name: mapped.name,
+                description: mapped.description,
+                shortDescription: mapped.description,
+                basePrice: mapped.basePrice,
+                rating: mapped.rating,
                 active: true,
-                syncMetadata: JSON.stringify(data),
+                syncMetadata: JSON.stringify(item),
               },
             })
           : await prisma.product.create({
               data: {
-                name,
+                name: mapped.name,
                 slug,
-                description,
-                shortDescription: description,
-                sku,
+                description: mapped.description,
+                shortDescription: mapped.description,
+                sku: mapped.sku,
                 active: true,
-                basePrice,
+                basePrice: mapped.basePrice,
+                rating: mapped.rating,
                 categoryId: fallbackCategory.id,
                 providerId: provider.id,
                 providerServiceId: service.id,
-                externalProductId,
-                syncMetadata: JSON.stringify(data),
-                images: imageUrl
+                externalProductId: mapped.externalProductId,
+                syncMetadata: JSON.stringify(item),
+                images: mapped.imageUrl
                   ? {
-                      create: [{ url: imageUrl, isMain: true, sortOrder: 0 }],
+                      create: [{ url: mapped.imageUrl, isMain: true, sortOrder: 0 }],
                     }
                   : undefined,
               },
@@ -155,10 +207,10 @@ export async function syncProveedorProductos(providerId: string) {
           await prisma.productVariant.update({
             where: { id: defaultVariant.id },
             data: {
-              sku: `${sku}-DEFAULT`,
+              sku: `${mapped.sku}-DEFAULT`,
               name: "Default",
-              price: basePrice,
-              stock,
+              price: mapped.basePrice,
+              stock: mapped.stock,
               isDefault: true,
             },
           });
@@ -166,10 +218,10 @@ export async function syncProveedorProductos(providerId: string) {
           await prisma.productVariant.create({
             data: {
               productId: product.id,
-              sku: `${sku}-DEFAULT`,
+              sku: `${mapped.sku}-DEFAULT`,
               name: "Default",
-              price: basePrice,
-              stock,
+              price: mapped.basePrice,
+              stock: mapped.stock,
               isDefault: true,
             },
           });
@@ -209,6 +261,7 @@ export async function createProveedor(data: ProveedorInput) {
           apiKey: service.apiKey || null,
           secretKey: service.secretKey || null,
           headersJson: service.headersJson || null,
+          productMappingJson: service.productMappingJson || null,
           active: service.active,
         })),
       },
@@ -242,6 +295,7 @@ export async function updateProveedor(data: ProveedorInput) {
           apiKey: service.apiKey || null,
           secretKey: service.secretKey || null,
           headersJson: service.headersJson || null,
+          productMappingJson: service.productMappingJson || null,
           active: service.active,
         })),
       },

@@ -11,6 +11,7 @@ export const providerServiceSchema = z.object({
   apiKey: z.string().optional().nullable(),
   secretKey: z.string().optional().nullable(),
   headersJson: z.string().optional().nullable(),
+  productMappingJson: z.string().optional().nullable(),
   active: z.boolean().default(true),
 });
 
