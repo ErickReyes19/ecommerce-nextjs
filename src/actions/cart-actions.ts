@@ -32,10 +32,12 @@ export async function addToCart(input: { productId: string; variantId?: string; 
 
   const { cartId } = await getOrCreateGuestCart();
 
+  const normalizedVariantId = variantId ?? undefined;
+
   await prisma.cartItem.upsert({
-    where: { cartId_productId_variantId: { cartId, productId, variantId: variantId ?? null } },
+    where: { cartId_productId_variantId: { cartId, productId, variantId: normalizedVariantId } },
     update: { quantity: { increment: quantity } },
-    create: { cartId, productId, variantId: variantId ?? null, quantity },
+    create: { cartId, productId, variantId: normalizedVariantId, quantity },
   });
 
   revalidatePath("/carrito");
@@ -63,16 +65,18 @@ export async function syncLocalCart(items: Array<{ productId: string; variantId?
   const { cartId } = await getOrCreateGuestCart();
 
   for (const item of normalized) {
+    const normalizedVariantId = item.variantId ?? undefined;
+
     await prisma.cartItem.upsert({
       where: {
         cartId_productId_variantId: {
           cartId,
           productId: item.productId,
-          variantId: item.variantId ?? null,
+          variantId: normalizedVariantId,
         },
       },
       update: { quantity: item.quantity },
-      create: { cartId, productId: item.productId, variantId: item.variantId ?? null, quantity: item.quantity },
+      create: { cartId, productId: item.productId, variantId: normalizedVariantId, quantity: item.quantity },
     });
   }
 

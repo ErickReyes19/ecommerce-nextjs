@@ -3,7 +3,7 @@ import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import { ListCheck } from "lucide-react";
 import { getProductos } from "./actions";
-import { columns } from "./components/columns";
+import { columns, type ProductListRow } from "./components/columns";
 import { DataTable } from "./components/data-table";
 import ProductosListMobile from "./components/productos-list-mobile";
 
@@ -12,10 +12,11 @@ export default async function AdminProductosPage() {
   if (!permisos?.includes("ver_productos_admin")) return <NoAcceso />;
 
   const productos = await getProductos();
-  const data = productos.map((producto) => ({
-    ...producto,
+  const data: ProductListRow[] = productos.map((producto) => ({
+    id: producto.id,
+    name: producto.name,
+    sku: producto.sku,
     basePrice: Number(producto.basePrice),
-    compareAtPrice: producto.compareAtPrice ? Number(producto.compareAtPrice) : null,
     categoryName: producto.category.name,
     providerName: producto.provider?.name ?? "Interno",
   }));

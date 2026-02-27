@@ -6,6 +6,12 @@ import { notFound } from "next/navigation";
 import { getProveedorById } from "../../actions";
 import { ProveedorForm } from "../../components/form";
 
+function getServiceProductMappingJson(service: unknown): string {
+  if (!service || typeof service !== "object") return "";
+  const value = (service as { productMappingJson?: unknown }).productMappingJson;
+  return typeof value === "string" ? value : "";
+}
+
 export default async function EditProveedorPage({ params }: { params: Promise<{ id: string }> }) {
   const permisos = await getSessionPermisos();
   if (!permisos?.includes("editar_proveedores_admin")) return <NoAcceso />;
@@ -36,7 +42,7 @@ export default async function EditProveedorPage({ params }: { params: Promise<{ 
             apiKey: service.apiKey ?? "",
             secretKey: service.secretKey ?? "",
             headersJson: service.headersJson ?? "",
-            productMappingJson: service.productMappingJson ?? "",
+            productMappingJson: getServiceProductMappingJson(service),
             active: service.active,
           })),
         }}
