@@ -61,7 +61,11 @@ export const columns: ColumnDef<ProveedorTableItem>[] = [
       <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-        <SyncProveedorDropdownAction proveedorId={row.original.id} />
+        <form action={syncProveedorProductos.bind(null, row.original.id)}>
+          <DropdownMenuItem asChild>
+            <button type="submit" className="w-full text-left">Sincronizar productos</button>
+          </DropdownMenuItem>
+        </form>
         <Link href={`/proveedores/${row.original.id}/edit`}><DropdownMenuItem>Editar</DropdownMenuItem></Link>
         <form action={deleteProveedor.bind(null, row.original.id)}>
           <DropdownMenuItem asChild>
