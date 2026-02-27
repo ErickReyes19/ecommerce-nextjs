@@ -162,6 +162,22 @@ function extractCategoryName(value: unknown): string | null {
   return null;
 }
 
+
+function pickNumericValue(data: Record<string, unknown>, field: string, fallbacks: string[], mapping: Record<string, unknown>, fallback = 0) {
+  const mappedPath = typeof mapping[field] === "string" ? (mapping[field] as string) : "";
+  if (mappedPath) {
+    const mappedValue = toNumber(readPath(data, mappedPath), Number.NaN);
+    if (Number.isFinite(mappedValue)) return mappedValue;
+  }
+
+  for (const key of fallbacks) {
+    const value = toNumber(readPath(data, key), Number.NaN);
+    if (Number.isFinite(value)) return value;
+  }
+
+  return fallback;
+}
+
 function pickValue(data: Record<string, unknown>, field: string, fallbacks: string[], mapping: Record<string, unknown>) {
   const mapped = typeof mapping[field] === "string" ? readPath(data, mapping[field] as string) : undefined;
   if (mapped !== undefined && mapped !== null && `${mapped}`.trim() !== "") return mapped;
@@ -179,7 +195,7 @@ function mapProviderProduct(data: Record<string, unknown>, serviceId: string, ma
 
   const name = String(pickValue(data, "name", ["name", "title"], mapping) ?? `Producto ${externalProductId}`).trim();
   const sku = String(pickValue(data, "sku", ["sku"], mapping) ?? `PRV-${serviceId.slice(0, 6)}-${externalProductId}`).trim();
-  const basePrice = toNumber(pickValue(data, "price", ["price", "basePrice", "unitPrice"], mapping), 0);
+  const basePrice = pickNumericValue(data, "price", ["price", "basePrice", "unitPrice"], mapping, 0);
   const stock = Math.max(0, Math.floor(toNumber(pickValue(data, "stock", ["stock", "quantity", "inventory"], mapping), 0)));
   const description = String(pickValue(data, "description", ["description", "shortDescription"], mapping) ?? name).trim();
   const imageUrl = String(pickValue(data, "image", ["image", "imageUrl", "thumbnail"], mapping) ?? "").trim();
