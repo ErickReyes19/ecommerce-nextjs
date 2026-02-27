@@ -144,12 +144,12 @@ export function ProductoForm({
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel>Imágenes del producto</FieldLabel>
               <FieldDescription>
-                Ingresa una URL por línea. La primera imagen será la principal.
+                Ingresa URLs separadas por salto de línea o por coma (por ejemplo: img1,img2). La primera imagen será la principal.
               </FieldDescription>
               <FieldContent>
                 <textarea
                   className="min-h-28 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  placeholder="https://sitio.com/imagen-1.jpg&#10;https://sitio.com/imagen-2.jpg"
+                  placeholder="https://sitio.com/imagen-1.jpg,https://sitio.com/imagen-2.jpg"
                   value={field.value ?? ""}
                   onChange={(event) => field.onChange(event.target.value)}
                 />
