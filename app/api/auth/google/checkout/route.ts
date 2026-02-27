@@ -1,6 +1,6 @@
 import { getSession } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { IntervaloPlan } from "@prisma/client";
+import { IntervaloPlan } from "@/lib/generated/prisma";
 import { NextResponse } from "next/server";
 import Settings from "@pixelpay/sdk-core/lib/models/Settings";
 import TransactionService from "@pixelpay/sdk-core/lib/services/Transaction";

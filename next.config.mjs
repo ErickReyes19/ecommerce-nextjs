@@ -22,6 +22,10 @@ const nextConfig = {
           protocol: "https",
           hostname: "singularu.com",
         },
+        {
+          protocol: "https",
+          hostname: "fakestoreapi.com",
+        },
       ],
   },
   webpack: (config, { isServer }) => {

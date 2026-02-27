@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/lib/generated/prisma";
 
 export async function getProductosCatalogo(where: Prisma.ProductWhereInput, orderBy: Prisma.ProductOrderByWithRelationInput) {
   const [categories, brands, products, totalCount] = await Promise.all([
