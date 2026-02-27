@@ -119,10 +119,41 @@ function readPath(data: Record<string, unknown>, pathOrName: string): unknown {
   if (!pathOrName) return undefined;
   if (pathOrName in data) return data[pathOrName];
 
-  return pathOrName.split(".").reduce<unknown>((acc, key) => {
+  const normalizedPath = pathOrName.replace(/\[(\d+)\]/g, ".$1");
+  return normalizedPath.split(".").reduce<unknown>((acc, key) => {
     if (!acc || typeof acc !== "object") return undefined;
     return (acc as Record<string, unknown>)[key];
   }, data);
+}
+
+function extractCategoryName(value: unknown): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? trimmed : null;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return `${value}`;
+  }
+
+  if (Array.isArray(value)) {
+    for (const nested of value) {
+      const nestedName = extractCategoryName(nested);
+      if (nestedName) return nestedName;
+    }
+    return null;
+  }
+
+  if (value && typeof value === "object") {
+    const objectValue = value as Record<string, unknown>;
+    const direct = ["name", "title", "nombre", "category", "categoryName", "categoria"];
+    for (const key of direct) {
+      const nestedName = extractCategoryName(objectValue[key]);
+      if (nestedName) return nestedName;
+    }
+  }
+
+  return null;
 }
 
 function pickValue(data: Record<string, unknown>, field: string, fallbacks: string[], mapping: Record<string, unknown>) {
@@ -136,6 +167,7 @@ function pickValue(data: Record<string, unknown>, field: string, fallbacks: stri
 }
 
 function mapProviderProduct(data: Record<string, unknown>, serviceId: string, mapping: Record<string, unknown>) {
+  // Local product IDs are generated automatically in DB (UUID/CUID); only provider IDs are mapped.
   const externalProductId = String(pickValue(data, "externalProductId", ["id", "externalId", "productId"], mapping) ?? "").trim();
   if (!externalProductId) return null;
 
@@ -147,6 +179,13 @@ function mapProviderProduct(data: Record<string, unknown>, serviceId: string, ma
   const imageUrl = String(pickValue(data, "image", ["image", "imageUrl", "thumbnail"], mapping) ?? "").trim();
   const rawSlug = String(pickValue(data, "slug", ["slug"], mapping) ?? name).trim();
   const rating = Math.max(0, Math.min(5, toNumber(pickValue(data, "rating", ["rating"], mapping), 0)));
+  const rawCategory = pickValue(
+    data,
+    "category",
+    ["category", "categoryName", "categoria", "category.name", "categories.0.name"],
+    mapping,
+  );
+  const categoryName = extractCategoryName(rawCategory);
 
   return {
     externalProductId,
@@ -157,8 +196,42 @@ function mapProviderProduct(data: Record<string, unknown>, serviceId: string, ma
     description,
     imageUrl,
     rating,
+    categoryName,
     slugBase: toSlug(rawSlug) || `producto-${externalProductId}`,
   };
+}
+
+async function findOrCreateCategoryId(categoryName: string | null, fallbackCategoryId: string) {
+  if (!categoryName) return fallbackCategoryId;
+
+  const slugBase = toSlug(categoryName);
+  if (!slugBase) return fallbackCategoryId;
+
+  const category = await prisma.category.upsert({
+    where: { slug: slugBase },
+    update: { name: categoryName },
+    create: { name: categoryName, slug: slugBase },
+  });
+
+  return category.id;
+}
+
+async function upsertProductMainImage(productId: string, imageUrl: string) {
+  if (!imageUrl) return;
+
+  const existingMain = await prisma.productImage.findFirst({
+    where: { productId, isMain: true },
+    select: { id: true },
+  });
+
+  if (existingMain) {
+    await prisma.productImage.update({ where: { id: existingMain.id }, data: { url: imageUrl } });
+    return;
+  }
+
+  await prisma.productImage.create({
+    data: { productId, url: imageUrl, isMain: true, sortOrder: 0 },
+  });
 }
 
 export async function syncProveedorProductos(providerId: string) {
@@ -195,14 +268,14 @@ export async function syncProveedorProductos(providerId: string) {
       const raw = await response.json();
       const items = pickArray(raw);
 
-      for (let index = 0; index < items.length; index++) {
-        const item = items[index];
+      for (const item of items) {
         if (!item || typeof item !== "object") continue;
 
         const mapped = mapProviderProduct(item as Record<string, unknown>, service.id, mapping);
         if (!mapped) continue;
 
-        const slug = `${mapped.slugBase}-${service.id.slice(0, 4)}-${index}`;
+        const categoryId = await findOrCreateCategoryId(mapped.categoryName, fallbackCategory.id);
+        const slug = `${mapped.slugBase}-${service.id.slice(0, 4)}-${toSlug(mapped.externalProductId)}`;
 
         const existing = await prisma.product.findFirst({
           where: { providerServiceId: service.id, externalProductId: mapped.externalProductId },
@@ -216,8 +289,10 @@ export async function syncProveedorProductos(providerId: string) {
                 name: mapped.name,
                 description: mapped.description,
                 shortDescription: mapped.description,
+                sku: mapped.sku,
                 basePrice: mapped.basePrice,
                 rating: mapped.rating,
+                categoryId,
                 active: true,
                 syncMetadata: JSON.stringify(item),
               },
@@ -232,7 +307,7 @@ export async function syncProveedorProductos(providerId: string) {
                 active: true,
                 basePrice: mapped.basePrice,
                 rating: mapped.rating,
-                categoryId: fallbackCategory.id,
+                categoryId,
                 providerId: provider.id,
                 providerServiceId: service.id,
                 externalProductId: mapped.externalProductId,
@@ -267,8 +342,10 @@ export async function syncProveedorProductos(providerId: string) {
               stock: mapped.stock,
               isDefault: true,
             },
-          });
+            });
         }
+
+        await upsertProductMainImage(product.id, mapped.imageUrl);
 
         synced += 1;
       }
