@@ -6,7 +6,7 @@ import { AddToCartButton } from "@/src/components/ecommerce/add-to-cart-button";
 import { ProductImageGallery } from "@/src/components/ecommerce/product-image-gallery";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Star } from "lucide-react";
 import { formatHNL } from "@/src/lib/currency";
 import { getProductDetail, getProductMetadata, getRelatedProducts } from "./actions";
 
@@ -70,9 +70,25 @@ export default async function ProductDetailPage({
             <div className="mb-2 flex items-center gap-2">
               <Badge variant="outline">{product.category.name}</Badge>
               {product.brand && <Badge variant="secondary">{product.brand.name}</Badge>}
-              {product.provider && <Badge variant="outline">Proveedor: {product.provider.name}</Badge>}
             </div>
             <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground md:text-4xl">{product.name}</h1>
+            <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+              {product.provider && <p>Proveedor: {product.provider.name}</p>}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-0.5">
+                  {Array.from({ length: 5 }).map((_, index) => {
+                    const filled = index < Math.round(Number(product.rating ?? 0));
+                    return (
+                      <Star
+                        key={`star-${index}`}
+                        className={`h-4 w-4 ${filled ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40"}`}
+                      />
+                    );
+                  })}
+                </div>
+                <span>{Number(product.rating ?? 0).toFixed(1)}</span>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-baseline gap-3">
