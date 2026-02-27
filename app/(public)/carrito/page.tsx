@@ -11,6 +11,7 @@ import { CartLocalStorageSync } from "@/src/components/ecommerce/cart-local-stor
 import type { Metadata } from "next";
 import { formatHNL } from "@/src/lib/currency";
 import { ProductCard } from "@/src/components/ecommerce/product-card";
+import { pickFirstValidImageUrl } from "@/src/lib/image-url";
 import { getCartWithRecommendations } from "./actions";
 
 export const metadata: Metadata = {
@@ -63,7 +64,7 @@ export default async function CarritoPage() {
                   item.variant?.price ??
                   item.product.basePrice
               );
-              const image = item.product.images[0]?.url;
+              const image = pickFirstValidImageUrl(item.product.images.map((img) => img.url));
 
               return (
                 <Card key={item.id} className="overflow-hidden border-border/50">
@@ -214,7 +215,7 @@ export default async function CarritoPage() {
                     basePrice: Number(product.basePrice),
                     compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
                     category: { name: product.category.name },
-                    image: product.images[0]?.url ?? null,
+                    image: pickFirstValidImageUrl(product.images.map((image) => image.url)),
                   }}
                 />
               ))}

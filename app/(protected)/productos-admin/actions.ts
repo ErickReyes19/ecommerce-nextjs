@@ -3,6 +3,19 @@
 import { prisma } from "@/lib/prisma";
 import { productSchema, ProductInput } from "./schema";
 import { revalidatePath } from "next/cache";
+import { isValidImageUrl } from "@/src/lib/image-url";
+
+function parseImageUrls(imageUrls?: string | null) {
+  return (imageUrls ?? "")
+    .split(/[\r\n,]+/)
+    .map((url) => url.trim())
+    .filter((url) => isValidImageUrl(url))
+    .map((url, index) => ({
+      url,
+      isMain: index === 0,
+      sortOrder: index,
+    }));
+}
 
 export async function getProductos() {
   return prisma.product.findMany({
@@ -61,15 +74,7 @@ export async function createProduct(data: ProductInput) {
       externalProductId: parsed.externalProductId || null,
       syncMetadata: parsed.syncMetadata || null,
       images: {
-        create: (parsed.imageUrls ?? "")
-          .split(/\r?\n/)
-          .map((url) => url.trim())
-          .filter(Boolean)
-          .map((url, index) => ({
-            url,
-            isMain: index === 0,
-            sortOrder: index,
-          })),
+        create: parseImageUrls(parsed.imageUrls),
       },
       variants: {
         create: {
@@ -116,15 +121,7 @@ export async function updateProduct(data: ProductInput) {
       syncMetadata: parsed.syncMetadata || null,
       images: {
         deleteMany: {},
-        create: (parsed.imageUrls ?? "")
-          .split(/\r?\n/)
-          .map((url) => url.trim())
-          .filter(Boolean)
-          .map((url, index) => ({
-            url,
-            isMain: index === 0,
-            sortOrder: index,
-          })),
+        create: parseImageUrls(parsed.imageUrls),
       },
       variants: defaultVariant
         ? {
