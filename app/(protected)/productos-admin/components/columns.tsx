@@ -5,9 +5,17 @@ import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { deleteProduct } from "../actions";
-import { ProductInput } from "../schema";
 
-export const columns: ColumnDef<ProductInput & { categoryName?: string; providerName?: string }>[] = [
+export type ProductListRow = {
+  id: string;
+  name: string;
+  sku: string;
+  basePrice: number;
+  categoryName?: string;
+  providerName?: string;
+};
+
+export const columns: ColumnDef<ProductListRow>[] = [
   { accessorKey: "name", header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Producto<ArrowUpDown className="ml-2 h-4 w-4" /></Button> },
   { accessorKey: "sku", header: "SKU" },
   { accessorKey: "categoryName", header: "Categoría" },

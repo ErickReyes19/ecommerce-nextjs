@@ -13,6 +13,12 @@ type ServiceConnectionInput = {
   headersJson?: string | null;
 };
 
+function getServiceProductMappingJson(service: unknown): string | null {
+  if (!service || typeof service !== "object") return null;
+  const value = (service as { productMappingJson?: unknown }).productMappingJson;
+  return typeof value === "string" ? value : null;
+}
+
 export async function getProveedores() {
   return prisma.provider.findMany({
     include: { services: true },
@@ -253,7 +259,7 @@ export async function syncProveedorProductos(providerId: string) {
 
   for (const service of provider.services) {
     try {
-      const mapping = parseJsonObject(service.productMappingJson);
+      const mapping = parseJsonObject(getServiceProductMappingJson(service));
       const response = await fetch(`${service.baseUrl}${service.productEndpoint}`, {
         method: "GET",
         headers: buildServiceHeaders(service),
