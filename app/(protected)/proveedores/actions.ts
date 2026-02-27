@@ -55,7 +55,14 @@ function pickArray(payload: unknown): unknown[] {
 function toNumber(value: unknown, fallback = 0): number {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string") {
-    const parsed = Number(value);
+    const normalized = value
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/\.(?=.*\.)/g, "")
+      .replace(/,(?=\d{1,2}$)/, ".")
+      .replace(/,/g, "");
+
+    const parsed = Number(normalized);
     return Number.isFinite(parsed) ? parsed : fallback;
   }
   return fallback;
@@ -195,12 +202,12 @@ function mapProviderProduct(data: Record<string, unknown>, serviceId: string, ma
 
   const name = String(pickValue(data, "name", ["name", "title"], mapping) ?? `Producto ${externalProductId}`).trim();
   const sku = String(pickValue(data, "sku", ["sku"], mapping) ?? `PRV-${serviceId.slice(0, 6)}-${externalProductId}`).trim();
-  const basePrice = pickNumericValue(data, "price", ["price", "basePrice", "unitPrice"], mapping, 0);
+  const basePrice = pickNumericValue(data, "price", ["price", "basePrice", "unitPrice", "precio", "precioBase", "amount", "regularPrice", "regular_price"], mapping, 0);
   const stock = Math.max(0, Math.floor(toNumber(pickValue(data, "stock", ["stock", "quantity", "inventory"], mapping), 0)));
   const description = String(pickValue(data, "description", ["description", "shortDescription"], mapping) ?? name).trim();
   const imageUrl = String(pickValue(data, "image", ["image", "imageUrl", "thumbnail"], mapping) ?? "").trim();
   const rawSlug = String(pickValue(data, "slug", ["slug"], mapping) ?? name).trim();
-  const rating = Math.max(0, Math.min(5, toNumber(pickValue(data, "rating", ["rating"], mapping), 0)));
+  const rating = Math.max(0, Math.min(5, toNumber(pickValue(data, "rating", ["rating", "ranking", "rank", "score", "stars", "valoracion"], mapping), 0)));
   const rawCategory = pickValue(
     data,
     "category",
