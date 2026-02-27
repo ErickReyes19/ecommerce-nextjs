@@ -9,6 +9,7 @@ import Link from "next/link";
 import { ChevronRight, Star } from "lucide-react";
 import { formatHNL } from "@/src/lib/currency";
 import { getProductDetail, getProductMetadata, getRelatedProducts } from "./actions";
+import { isValidImageUrl, pickFirstValidImageUrl } from "@/src/lib/image-url";
 
 export async function generateMetadata({
   params,
@@ -37,7 +38,9 @@ export default async function ProductDetailPage({
   const comparePrice = Number(defaultVariant?.price ?? product.compareAtPrice ?? 0);
   const hasDiscount = defaultVariant?.salePrice && Number(defaultVariant.salePrice) < Number(defaultVariant.price);
 
-  const images = product.images.map((img) => ({ id: img.id, url: img.url, alt: img.alt ?? product.name, isMain: img.isMain }));
+  const images = product.images
+    .filter((img) => isValidImageUrl(img.url))
+    .map((img) => ({ id: img.id, url: img.url, alt: img.alt ?? product.name, isMain: img.isMain }));
   const related = await getRelatedProducts(product.id, product.categoryId);
 
   const attributeGroups = product.attributes.reduce(
@@ -152,7 +155,7 @@ export default async function ProductDetailPage({
             {related.map((p) => (
               <ProductCard
                 key={p.id}
-                product={{ id: p.id, name: p.name, slug: p.slug, basePrice: Number(p.basePrice), compareAtPrice: p.compareAtPrice ? Number(p.compareAtPrice) : null, category: { name: p.category.name }, image: p.images[0]?.url ?? null }}
+                product={{ id: p.id, name: p.name, slug: p.slug, basePrice: Number(p.basePrice), compareAtPrice: p.compareAtPrice ? Number(p.compareAtPrice) : null, category: { name: p.category.name }, image: pickFirstValidImageUrl(p.images.map((image) => image.url)) }}
               />
             ))}
           </div>

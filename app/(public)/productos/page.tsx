@@ -13,6 +13,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { getProductosCatalogo } from "./actions";
+import { pickFirstValidImageUrl } from "@/src/lib/image-url";
 
 export const dynamic = "force-dynamic";
 
@@ -105,7 +106,7 @@ export default async function ProductosPage({
                       ...product,
                       basePrice: Number(product.basePrice),
                       compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
-                      image: product.images[0]?.url ?? null,
+                      image: pickFirstValidImageUrl(product.images.map((image) => image.url)),
                     }}
                   />
                 ))}

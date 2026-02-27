@@ -3,6 +3,19 @@
 import { prisma } from "@/lib/prisma";
 import { productSchema, ProductInput } from "./schema";
 import { revalidatePath } from "next/cache";
+import { isValidImageUrl } from "@/src/lib/image-url";
+
+function parseImageUrls(imageUrls?: string | null) {
+  return (imageUrls ?? "")
+    .split(/[\r\n,]+/)
+    .map((url) => url.trim())
+    .filter((url) => isValidImageUrl(url))
+    .map((url, index) => ({
+      url,
+      isMain: index === 0,
+      sortOrder: index,
+    }));
+}
 
 function parseImageUrls(imageUrls?: string | null) {
   return (imageUrls ?? "")
