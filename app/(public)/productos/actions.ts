@@ -15,6 +15,7 @@ export async function getProductosCatalogo(
 
   const [categories, brands, products, totalCount] = await Promise.all([
     prisma.category.findMany({
+      where: { products: { some: { active: true } } },
       include: { _count: { select: { products: { where: { active: true } } } } },
       orderBy: { name: "asc" },
     }),
