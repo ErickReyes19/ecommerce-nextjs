@@ -68,7 +68,8 @@ export default async function CarritoPage() {
 
               return (
                 <Card key={item.id} className="overflow-hidden border-border/50">
-                  <CardContent className="flex gap-4 p-4">
+                  <CardContent className="p-4">
+                    <div className="flex flex-col gap-4 sm:flex-row">
                     {/* Thumbnail */}
                     <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-secondary">
                       {image ? (
@@ -86,14 +87,14 @@ export default async function CarritoPage() {
                     </div>
 
                     {/* Info */}
-                    <div className="flex flex-1 flex-col justify-between">
+                    <div className="flex min-w-0 flex-1 flex-col justify-between gap-3">
                       <div>
                         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                           {item.product.category.name}
                         </p>
                         <Link
                           href={`/productos/${item.product.slug}`}
-                          className="font-semibold text-foreground transition-colors hover:text-muted-foreground"
+                          className="line-clamp-2 font-semibold text-foreground transition-colors hover:text-muted-foreground"
                         >
                           {item.product.name}
                         </Link>
@@ -103,7 +104,7 @@ export default async function CarritoPage() {
                           </p>
                         )}
                       </div>
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <form
                             action={async () => {
@@ -124,7 +125,7 @@ export default async function CarritoPage() {
                             <Button type="submit" variant="outline" size="sm">+</Button>
                           </form>
                         </div>
-                        <span className="font-semibold text-foreground">
+                        <span className="ml-auto font-semibold text-foreground sm:ml-0">
                           {formatHNL(unitPrice * item.quantity)}
                         </span>
                       </div>
@@ -141,12 +142,13 @@ export default async function CarritoPage() {
                         type="submit"
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        className="h-8 w-8 self-start text-muted-foreground hover:text-destructive sm:self-auto"
                       >
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">Eliminar</span>
                       </Button>
                     </form>
+                    </div>
                   </CardContent>
                 </Card>
               );
