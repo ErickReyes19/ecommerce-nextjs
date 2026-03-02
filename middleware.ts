@@ -12,7 +12,7 @@ const ROUTE_RATE_LIMITS: Record<string, RateLimitConfig> = {
   "/api": { limit: 80, windowMs: 60_000 },
   "/checkout": { limit: 50, windowMs: 60_000 },
   "/protected": { limit: 50, windowMs: 60_000 },
-  "/public": { limit: 50, windowMs: 60_000 },
+  "/productos": { limit: 50, windowMs: 60_000 },
 };
 
 // Persist map in globalThis so it survives hot-reloads in dev (per instancia)
@@ -132,5 +132,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/protected/:path*", "/checkout/:path*", "/api/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|images|uploads).*)"],
 };
