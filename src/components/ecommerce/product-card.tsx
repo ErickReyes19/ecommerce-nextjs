@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ShoppingBag } from "lucide-react";
+import { WishlistButton } from "@/src/components/ecommerce/wishlist-button";
 import { formatHNL } from "@/src/lib/currency";
 
 type Props = {
@@ -15,6 +16,7 @@ type Props = {
     compareAtPrice?: number | null;
     category: { name: string };
     image?: string | null;
+    initialIsInWishlist?: boolean;
   };
 };
 
@@ -74,17 +76,23 @@ export function ProductCard({ product }: Props) {
               </span>
             ) : null}
           </div>
-          <Button
-            asChild
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full"
-          >
-            <Link href={`/productos/${product.slug}`}>
-              <ArrowRight className="h-4 w-4" />
-              <span className="sr-only">Ver {product.name}</span>
-            </Link>
-          </Button>
+          <div className="flex items-center gap-1">
+            <WishlistButton
+              productId={product.id}
+              initialIsInWishlist={Boolean(product.initialIsInWishlist)}
+            />
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+            >
+              <Link href={`/productos/${product.slug}`}>
+                <ArrowRight className="h-4 w-4" />
+                <span className="sr-only">Ver {product.name}</span>
+              </Link>
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

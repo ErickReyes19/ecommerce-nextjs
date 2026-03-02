@@ -6,10 +6,12 @@ import { AddToCartButton } from "@/src/components/ecommerce/add-to-cart-button";
 import { ProductImageGallery } from "@/src/components/ecommerce/product-image-gallery";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, Star } from "lucide-react";
+import { ChevronRight, Star, Heart } from "lucide-react";
 import { formatHNL } from "@/src/lib/currency";
 import { getProductDetail, getProductMetadata, getRelatedProducts } from "./actions";
 import { isValidImageUrl, pickFirstValidImageUrl } from "@/src/lib/image-url";
+import { getWishlistProductIdsForCurrentUser } from "@/src/actions/wishlist-actions";
+import { WishlistButton } from "@/src/components/ecommerce/wishlist-button";
 
 export async function generateMetadata({
   params,
@@ -41,7 +43,11 @@ export default async function ProductDetailPage({
   const images = product.images
     .filter((img) => isValidImageUrl(img.url))
     .map((img) => ({ id: img.id, url: img.url, alt: img.alt ?? product.name, isMain: img.isMain }));
-  const related = await getRelatedProducts(product.id, product.categoryId);
+  const [related, wishlistProductIds] = await Promise.all([
+    getRelatedProducts(product.id, product.categoryId),
+    getWishlistProductIdsForCurrentUser(),
+  ]);
+  const wishlistSet = new Set(wishlistProductIds);
 
   const attributeGroups = product.attributes.reduce(
     (acc, attr) => {
@@ -142,7 +148,19 @@ export default async function ProductDetailPage({
 
           <Separator />
 
-          <AddToCartButton productId={product.id} variantId={defaultVariant?.id} disabled={!defaultVariant || defaultVariant.stock <= 0} />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex-1">
+              <AddToCartButton productId={product.id} variantId={defaultVariant?.id} disabled={!defaultVariant || defaultVariant.stock <= 0} />
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-border px-3 py-2">
+              <Heart className="h-4 w-4 text-rose-500" />
+              <span className="text-sm text-muted-foreground">Deseos</span>
+              <WishlistButton
+                productId={product.id}
+                initialIsInWishlist={wishlistSet.has(product.id)}
+              />
+            </div>
+          </div>
 
           <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
         </div>
@@ -155,7 +173,7 @@ export default async function ProductDetailPage({
             {related.map((p) => (
               <ProductCard
                 key={p.id}
-                product={{ id: p.id, name: p.name, slug: p.slug, basePrice: Number(p.basePrice), compareAtPrice: p.compareAtPrice ? Number(p.compareAtPrice) : null, category: { name: p.category.name }, image: pickFirstValidImageUrl(p.images.map((image) => image.url)) }}
+                product={{ id: p.id, name: p.name, slug: p.slug, basePrice: Number(p.basePrice), compareAtPrice: p.compareAtPrice ? Number(p.compareAtPrice) : null, category: { name: p.category.name }, image: pickFirstValidImageUrl(p.images.map((image) => image.url)), initialIsInWishlist: wishlistSet.has(p.id) }}
               />
             ))}
           </div>

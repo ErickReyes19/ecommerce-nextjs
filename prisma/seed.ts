@@ -41,9 +41,10 @@ const ADMIN_PERMISSIONS = [
   "editar_proveedores_admin",
   "eliminar_proveedores_admin",
   "ver_facturas",
+  "ver_lista_deseos",
 ] as const;
 
-const CLIENT_PERMISSIONS = ["ver_mi_perfil", "ver_facturas"] as const;
+const CLIENT_PERMISSIONS = ["ver_mi_perfil", "ver_facturas", "ver_lista_deseos"] as const;
 
 const categoryTree = [
   { name: "Electrónica", slug: "electronica", children: ["smartphones", "laptops"] },
