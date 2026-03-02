@@ -53,6 +53,7 @@ const ecommerceAdminItems = [
   { title: "Métodos de envío", url: "/metodos-envio", permiso: "ver_metodos_envio_admin" },
   { title: "Reportes", url: "/reportes", permiso: "ver_reportes_admin" },
   { title: "Proveedores", url: "/proveedores", permiso: "ver_proveedores_admin" },
+  { title: "Comentarios", url: "/comentarios", permiso: "ver_comentarios" },
 ];
 
 export async function AppSidebar() {

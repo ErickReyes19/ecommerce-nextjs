@@ -42,7 +42,8 @@ const ADMIN_PERMISSIONS = [
   "eliminar_proveedores_admin",
   "ver_facturas",
   "ver_lista_deseos",
-  "ver_mi_perfil"
+  "ver_mi_perfil",
+  "ver_comentarios"
 ] as const;
 
 const CLIENT_PERMISSIONS = ["ver_mi_perfil", "ver_facturas", "ver_lista_deseos"] as const;

@@ -1,4 +1,4 @@
-import { getSession } from "@/auth";
+import { getSessionPermisos } from "@/auth";
 import NoAcceso from "@/components/noAccess";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,8 +27,8 @@ function mapStatus(value?: string): CommentStatus | undefined {
 }
 
 export default async function ComentariosAdminPage({ searchParams }: { searchParams: { status?: string } }) {
-  const session = await getSession();
-  if (!session?.IdUser || session.Rol !== "ADMIN") return <NoAcceso />;
+  const permisos = await getSessionPermisos();
+  if (!permisos?.includes("ver_comentarios")) return <NoAcceso />;
 
   const filterStatus = mapStatus(searchParams.status);
   const comments = await getAdminProductComments(filterStatus);
