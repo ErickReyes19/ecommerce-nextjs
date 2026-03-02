@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { StoreNavbar } from "@/src/components/ecommerce/store-navbar";
 import { StoreFooter } from "@/src/components/ecommerce/store-footer";
 import { CartHydrator } from "@/src/components/ecommerce/cart-hydrator";
+import { WishlistHydrator } from "@/src/components/ecommerce/wishlist-hydrator";
 
 async function getCartCount() {
   try {
@@ -29,6 +30,7 @@ const PublicLayout: React.FC<{ children: React.ReactNode }> = async ({
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <CartHydrator />
+      <WishlistHydrator enabled={Boolean(session?.IdUser)} />
       <StoreNavbar cartCount={cartCount} accountHref={accountHref} />
       <main className="flex-1">{children}</main>
       <StoreFooter />

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/pagination";
 import { getProductosCatalogo } from "./actions";
 import { pickFirstValidImageUrl } from "@/src/lib/image-url";
+import { getWishlistProductIdsForCurrentUser } from "@/src/actions/wishlist-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +65,13 @@ export default async function ProductosPage({
   const orderBy: Prisma.ProductOrderByWithRelationInput =
     sort === "precio-asc" ? { basePrice: "asc" } : sort === "precio-desc" ? { basePrice: "desc" } : sort === "nombre" ? { name: "asc" } : { createdAt: "desc" };
 
-  const { categories, brands, products, totalCount } = await getProductosCatalogo(where, orderBy, page, pageSize);
+  const [catalogData, wishlistProductIds] = await Promise.all([
+    getProductosCatalogo(where, orderBy, page, pageSize),
+    getWishlistProductIdsForCurrentUser(),
+  ]);
+
+  const { categories, brands, products, totalCount } = catalogData;
+  const wishlistSet = new Set(wishlistProductIds);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
@@ -107,6 +114,7 @@ export default async function ProductosPage({
                       basePrice: Number(product.basePrice),
                       compareAtPrice: product.compareAtPrice ? Number(product.compareAtPrice) : null,
                       image: pickFirstValidImageUrl(product.images.map((image) => image.url)),
+                      initialIsInWishlist: wishlistSet.has(product.id),
                     }}
                   />
                 ))}
