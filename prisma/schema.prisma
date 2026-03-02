@@ -283,7 +283,7 @@ model Product {
   name             String
   slug             String             @unique
   description      String             @db.Text
-  shortDescription String?
+  shortDescription String?            @db.Text
   sku              String             @unique
   active           Boolean            @default(true)
   basePrice        Decimal            @db.Decimal(10, 2)
