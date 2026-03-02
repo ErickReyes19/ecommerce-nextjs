@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const rateMap = new Map<string, { count: number; reset: number }>();
-const RATE_LIMIT = 10;
+const RATE_LIMIT = 80;
 const WINDOW_MS = 60_000;
 
 function isRateLimited(ip: string) {
