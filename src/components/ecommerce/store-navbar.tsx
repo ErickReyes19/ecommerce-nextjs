@@ -10,7 +10,7 @@ import {
   SheetTrigger,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Menu, ShoppingBag, Search, User, Store } from "lucide-react";
+import { Menu, ShoppingBag, Search, User, Store, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const navLinks = [
@@ -37,7 +37,6 @@ export function StoreNavbar({ cartCount = 0, accountHref = "/login" }: { cartCou
       }`}
     >
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4">
-        {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <Store className="h-6 w-6 text-foreground" />
           <span className="text-xl font-serif font-bold tracking-tight text-foreground">
@@ -45,7 +44,6 @@ export function StoreNavbar({ cartCount = 0, accountHref = "/login" }: { cartCou
           </span>
         </Link>
 
-        {/* Desktop nav */}
         <nav className="hidden items-center gap-1 md:flex">
           {navLinks.map((link) => (
             <Link
@@ -58,13 +56,18 @@ export function StoreNavbar({ cartCount = 0, accountHref = "/login" }: { cartCou
           ))}
         </nav>
 
-        {/* Desktop actions */}
         <div className="hidden items-center gap-2 md:flex">
           <ThemeToggle />
           <Button variant="ghost" size="icon" className="rounded-full" asChild>
             <Link href="/productos">
               <Search className="h-4 w-4" />
               <span className="sr-only">Buscar</span>
+            </Link>
+          </Button>
+          <Button variant="ghost" size="icon" className="rounded-full" asChild>
+            <Link href="/lista-deseos">
+              <Heart className="h-4 w-4" />
+              <span className="sr-only">Lista de deseos</span>
             </Link>
           </Button>
           <Button variant="ghost" size="icon" className="rounded-full" asChild>
@@ -91,8 +94,13 @@ export function StoreNavbar({ cartCount = 0, accountHref = "/login" }: { cartCou
           </Button>
         </div>
 
-        {/* Mobile */}
         <div className="flex items-center gap-2 md:hidden">
+          <Button variant="ghost" size="icon" className="rounded-full" asChild>
+            <Link href="/lista-deseos">
+              <Heart className="h-4 w-4" />
+              <span className="sr-only">Lista de deseos</span>
+            </Link>
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -129,6 +137,12 @@ export function StoreNavbar({ cartCount = 0, accountHref = "/login" }: { cartCou
                   </Link>
                 ))}
                 <div className="my-4 border-t border-border" />
+                <Link
+                  href="/lista-deseos"
+                  className="rounded-lg px-3 py-3 text-base font-medium text-foreground transition-colors hover:bg-secondary"
+                >
+                  Lista de deseos
+                </Link>
                 <Link
                   href={accountHref}
                   className="rounded-lg px-3 py-3 text-base font-medium text-foreground transition-colors hover:bg-secondary"

@@ -62,6 +62,7 @@ export async function toggleWishlistItem(productId: string) {
   }
 
   revalidatePath("/productos");
+  revalidatePath("/lista-deseos");
 
   return { ok: true, action };
 }
@@ -96,6 +97,7 @@ export async function syncLocalWishlist(productIds: string[]) {
   }
 
   revalidatePath("/productos");
+  revalidatePath("/lista-deseos");
 
   return { ok: true };
 }
