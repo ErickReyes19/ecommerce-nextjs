@@ -26,7 +26,13 @@ export async function addToCart(input: { productId: string; variantId?: string; 
   if (!parsed.success) return { error: "Payload inválido" };
   const { productId, variantId, quantity } = parsed.data;
 
-  const variant = variantId ? await prisma.productVariant.findUnique({ where: { id: variantId } }) : null;
+  const product = await prisma.product.findUnique({ where: { id: productId }, select: { id: true, active: true } });
+  if (!product || !product.active) return { error: "Este producto no está disponible" };
+
+  const variant = variantId
+    ? await prisma.productVariant.findFirst({ where: { id: variantId, productId }, select: { id: true, stock: true } })
+    : null;
+  if (variantId && !variant) return { error: "Variante inválida para este producto" };
   const stock = variant?.stock ?? 0;
   if (variantId && stock < quantity) return { error: "Stock insuficiente" };
 
@@ -45,6 +51,20 @@ export async function addToCart(input: { productId: string; variantId?: string; 
 }
 
 export async function updateCartItem(itemId: string, quantity: number) {
+  const item = await prisma.cartItem.findUnique({
+    where: { id: itemId },
+    include: { product: { select: { active: true, name: true } }, variant: { select: { stock: true } } },
+  });
+
+  if (!item) return;
+  if (!item.product.active) {
+    await prisma.cartItem.delete({ where: { id: itemId } });
+    revalidatePath("/carrito");
+    return;
+  }
+
+  if (item.variant && item.variant.stock < quantity) return;
+
   await prisma.cartItem.update({ where: { id: itemId }, data: { quantity } });
   revalidatePath("/carrito");
 }
@@ -65,6 +85,15 @@ export async function syncLocalCart(items: Array<{ productId: string; variantId?
   const { cartId } = await getOrCreateGuestCart();
 
   for (const item of normalized) {
+    const product = await prisma.product.findUnique({ where: { id: item.productId }, select: { id: true, active: true } });
+    if (!product?.active) continue;
+
+    const variant = item.variantId
+      ? await prisma.productVariant.findFirst({ where: { id: item.variantId, productId: item.productId }, select: { id: true, stock: true } })
+      : null;
+    if (item.variantId && !variant) continue;
+    if (variant && variant.stock < item.quantity) continue;
+
     const normalizedVariantId = item.variantId ?? undefined;
 
     await prisma.cartItem.upsert({
@@ -82,4 +111,18 @@ export async function syncLocalCart(items: Array<{ productId: string; variantId?
 
   revalidatePath("/carrito");
   return { ok: true };
+}
+
+export async function removeInactiveItemsFromCart(cartId: string) {
+  const inactiveItems = await prisma.cartItem.findMany({
+    where: { cartId, product: { active: false } },
+    select: { id: true },
+  });
+
+  if (inactiveItems.length === 0) return 0;
+
+  await prisma.cartItem.deleteMany({ where: { id: { in: inactiveItems.map((item) => item.id) } } });
+  revalidatePath("/carrito");
+  revalidatePath("/checkout");
+  return inactiveItems.length;
 }

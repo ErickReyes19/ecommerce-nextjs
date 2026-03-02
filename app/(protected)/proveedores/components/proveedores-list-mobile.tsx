@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useTransition } from "react";
 import { toast } from "sonner";
-import { deleteProveedor, syncProveedorProductos } from "../actions";
+import { deleteProveedor, desactivarProductosProveedor, syncProveedorProductos } from "../actions";
 import { ProveedorTableItem } from "./columns";
 
 function SyncProveedorButton({ proveedorId }: { proveedorId: string }) {
@@ -39,6 +39,34 @@ function SyncProveedorButton({ proveedorId }: { proveedorId: string }) {
   );
 }
 
+
+
+function DeactivateProveedorButton({ proveedorId }: { proveedorId: string }) {
+  const [isPending, startTransition] = useTransition();
+
+  const handleDeactivate = () => {
+    startTransition(() => {
+      void (async () => {
+        const result = await desactivarProductosProveedor(proveedorId);
+
+        if (!result.ok) {
+          toast.error(result.error ?? "No se pudieron desactivar los productos del proveedor.");
+          return;
+        }
+
+        toast.success(`Productos desactivados: ${result.updated}.`);
+      })();
+    });
+  };
+
+  return (
+    <Button variant="outline" className="w-full" type="button" onClick={handleDeactivate} disabled={isPending}>
+      {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+      {isPending ? "Desactivando..." : "Desactivar productos"}
+    </Button>
+  );
+}
+
 export default function ProveedoresListMobile({ proveedores }: { proveedores: ProveedorTableItem[] }) {
   return (
     <div className="space-y-3">
@@ -50,6 +78,7 @@ export default function ProveedoresListMobile({ proveedores }: { proveedores: Pr
           <p className="text-sm">Servicios: {proveedor.servicesCount}</p>
           <div className="grid grid-cols-1 gap-2">
             <SyncProveedorButton proveedorId={proveedor.id} />
+            <DeactivateProveedorButton proveedorId={proveedor.id} />
             <div className="flex gap-2">
               <Link href={`/proveedores/${proveedor.id}/edit`} className="flex-1"><Button variant="outline" className="w-full">Editar</Button></Link>
               <form action={deleteProveedor.bind(null, proveedor.id)} className="flex-1"><Button variant="destructive" className="w-full" type="submit">Eliminar</Button></form>

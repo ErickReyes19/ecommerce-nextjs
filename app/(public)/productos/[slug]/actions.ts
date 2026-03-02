@@ -3,12 +3,12 @@
 import { prisma } from "@/lib/prisma";
 
 export async function getProductMetadata(slug: string) {
-  return prisma.product.findUnique({ where: { slug }, include: { category: true } });
+  return prisma.product.findFirst({ where: { slug, active: true }, include: { category: true } });
 }
 
 export async function getProductDetail(slug: string) {
-  return prisma.product.findUnique({
-    where: { slug },
+  return prisma.product.findFirst({
+    where: { slug, active: true },
     include: {
       variants: { orderBy: { isDefault: "desc" } },
       images: { orderBy: { sortOrder: "asc" } },

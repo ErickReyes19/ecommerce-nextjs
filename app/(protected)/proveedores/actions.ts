@@ -432,6 +432,26 @@ export async function syncProveedorProductos(providerId: string) {
   return { ok: true, synced, errors };
 }
 
+export async function desactivarProductosProveedor(providerId: string) {
+  const provider = await prisma.provider.findUnique({ where: { id: providerId }, select: { id: true, name: true } });
+  if (!provider) return { ok: false, error: "Proveedor no encontrado" };
+
+  const result = await prisma.product.updateMany({
+    where: { providerId, active: true },
+    data: { active: false },
+  });
+
+  await prisma.cartItem.deleteMany({ where: { product: { providerId, active: false } } });
+
+  revalidatePath("/proveedores");
+  revalidatePath("/productos");
+  revalidatePath("/carrito");
+  revalidatePath("/checkout");
+  revalidatePath("/productos-admin");
+
+  return { ok: true, updated: result.count, providerName: provider.name };
+}
+
 export async function inspectProveedorServiceProducts(input: ServiceConnectionInput) {
   try {
     const response = await fetch(`${input.baseUrl}${input.productEndpoint}`, {

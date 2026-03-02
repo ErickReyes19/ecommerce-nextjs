@@ -12,6 +12,12 @@ export async function createOrder(payload: unknown, cartId: string) {
   const cart = await prisma.cart.findUnique({ where: { id: cartId }, include: { items: { include: { variant: true, product: true } } } });
   if (!cart || cart.items.length === 0) return { error: "Carrito vacío" };
 
+  const inactiveItems = cart.items.filter((item) => !item.product.active);
+  if (inactiveItems.length > 0) {
+    await prisma.cartItem.deleteMany({ where: { id: { in: inactiveItems.map((item) => item.id) } } });
+    return { error: "Se eliminaron productos inactivos del carrito. Revisa tu carrito e intenta de nuevo." };
+  }
+
   for (const item of cart.items) {
     if (item.variant && item.variant.stock < item.quantity) return { error: `Stock insuficiente para ${item.product.name}` };
   }

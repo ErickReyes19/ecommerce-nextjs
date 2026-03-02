@@ -17,6 +17,14 @@ export async function getCartWithRecommendations(token?: string) {
       })
     : null;
 
+  if (cart) {
+    const inactiveItemIds = cart.items.filter((item) => !item.product.active).map((item) => item.id);
+    if (inactiveItemIds.length > 0) {
+      await prisma.cartItem.deleteMany({ where: { id: { in: inactiveItemIds } } });
+      cart.items = cart.items.filter((item) => item.product.active);
+    }
+  }
+
   const items = cart?.items ?? [];
   const cartProductIds = items.map((item) => item.productId);
   const cartCategoryIds = Array.from(new Set(items.map((item) => item.product.categoryId)));
