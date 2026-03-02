@@ -195,7 +195,7 @@ export function PixelPayCheckout({
       <CardContent>
         <form id="pixelpay-checkout-form" className="space-y-5" onSubmit={onSubmit}>
           <div className="space-y-2 rounded-md border bg-muted/30 p-3 text-sm">
-            <div className="flex items-end gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
               <div className="flex-1 space-y-1">
                 <Label htmlFor="coupon">Cupón</Label>
                 <Input
@@ -208,6 +208,7 @@ export function PixelPayCheckout({
               <Button
                 type="button"
                 variant="outline"
+                className="w-full sm:w-auto"
                 onClick={async () => {
                   const coupon = form.couponCode.trim().toUpperCase();
                   setIsValidatingCoupon(true);
@@ -282,7 +283,7 @@ export function PixelPayCheckout({
               </div>
               <div className="space-y-2"><Label>Nombre en tarjeta</Label><Input placeholder="Como aparece en la tarjeta" value={form.card_holder} onChange={(e) => setForm((prev) => ({ ...prev, card_holder: e.target.value }))} /></div>
               <div className="space-y-2"><Label>Número de tarjeta</Label><Input placeholder="0000 0000 0000 0000" value={form.card_number} onChange={(e) => setForm((prev) => ({ ...prev, card_number: e.target.value }))} inputMode="numeric" maxLength={19} /></div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-2"><Label>Mes (MM)</Label><Input placeholder="08" value={form.card_exp_month} onChange={(e) => setForm((prev) => ({ ...prev, card_exp_month: e.target.value }))} inputMode="numeric" maxLength={2} /></div>
                 <div className="space-y-2"><Label>Año (YY)</Label><Input placeholder="29" value={form.card_exp_year} onChange={(e) => setForm((prev) => ({ ...prev, card_exp_year: e.target.value }))} inputMode="numeric" maxLength={2} /></div>
                 <div className="space-y-2"><Label>CVV</Label><Input placeholder="123" value={form.card_cvv} onChange={(e) => setForm((prev) => ({ ...prev, card_cvv: e.target.value }))} inputMode="numeric" maxLength={4} /></div>
