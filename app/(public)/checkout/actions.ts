@@ -19,6 +19,14 @@ export async function getCheckoutData(token: string | undefined, sessionUserId: 
         })
       : null;
 
+  if (cart) {
+    const inactiveItemIds = cart.items.filter((item) => !item.product.active).map((item) => item.id);
+    if (inactiveItemIds.length > 0) {
+      await prisma.cartItem.deleteMany({ where: { id: { in: inactiveItemIds } } });
+      cart.items = cart.items.filter((item) => item.product.active);
+    }
+  }
+
   const [methods, currentUser] = await Promise.all([
     prisma.shippingMethod.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     prisma.usuarios.findUnique({

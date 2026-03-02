@@ -7,7 +7,7 @@ import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useTransition } from "react";
 import { toast } from "sonner";
-import { deleteProveedor, syncProveedorProductos } from "../actions";
+import { deleteProveedor, desactivarProductosProveedor, syncProveedorProductos } from "../actions";
 
 export type ProveedorTableItem = {
   id: string;
@@ -50,6 +50,34 @@ function SyncProveedorDropdownAction({ proveedorId }: { proveedorId: string }) {
   );
 }
 
+
+function DeactivateProveedorDropdownAction({ proveedorId }: { proveedorId: string }) {
+  const [isPending, startTransition] = useTransition();
+
+  const handleDeactivate = () => {
+    startTransition(() => {
+      void (async () => {
+        const result = await desactivarProductosProveedor(proveedorId);
+
+        if (!result.ok) {
+          toast.error(result.error ?? "No se pudieron desactivar los productos del proveedor.");
+          return;
+        }
+
+        toast.success(`Productos desactivados: ${result.updated}.`);
+      })();
+    });
+  };
+
+  return (
+    <DropdownMenuItem asChild>
+      <button type="button" onClick={handleDeactivate} disabled={isPending} className="w-full text-left">
+        {isPending ? "Desactivando..." : "Desactivar productos"}
+      </button>
+    </DropdownMenuItem>
+  );
+}
+
 export const columns: ColumnDef<ProveedorTableItem>[] = [
   { accessorKey: "name", header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Nombre<ArrowUpDown className="ml-2 h-4 w-4" /></Button> },
   { accessorKey: "slug", header: "Slug" },
@@ -64,6 +92,7 @@ export const columns: ColumnDef<ProveedorTableItem>[] = [
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Acciones</DropdownMenuLabel>
         <SyncProveedorDropdownAction proveedorId={row.original.id} />
+        <DeactivateProveedorDropdownAction proveedorId={row.original.id} />
         <Link href={`/proveedores/${row.original.id}/edit`}><DropdownMenuItem>Editar</DropdownMenuItem></Link>
         <form action={deleteProveedor.bind(null, row.original.id)}>
           <DropdownMenuItem asChild>
