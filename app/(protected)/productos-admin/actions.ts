@@ -17,17 +17,6 @@ function parseImageUrls(imageUrls?: string | null) {
     }));
 }
 
-function parseImageUrls(imageUrls?: string | null) {
-  return (imageUrls ?? "")
-    .split(/[\r\n,]+/)
-    .map((url) => url.trim())
-    .filter(Boolean)
-    .map((url, index) => ({
-      url,
-      isMain: index === 0,
-      sortOrder: index,
-    }));
-}
 
 export async function getProductos() {
   return prisma.product.findMany({

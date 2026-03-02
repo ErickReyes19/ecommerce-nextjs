@@ -26,6 +26,18 @@ const nextConfig = {
           protocol: "https",
           hostname: "fakestoreapi.com",
         },
+        {
+          protocol: "https",
+          hostname: "dn.dummyjson.com",
+        },
+        {
+          protocol: "https",
+          hostname: "cdn.dummyjson.com",
+        },
+        {
+          protocol: "https",
+          hostname: "i.imgur.com",
+        },
       ],
   },
   webpack: (config, { isServer }) => {
