@@ -60,8 +60,34 @@ model Usuarios {
   rol                 Rol                  @relation(fields: [rol_id], references: [id])
   PasswordResetToken  PasswordResetToken[]
   wishlists          Wishlist[]
+  productComments    ProductComment[]      @relation("ProductCommentAuthor")
+  reviewedComments   ProductComment[]      @relation("ProductCommentReviewer")
 
   @@index([rol_id], map: "IX_Usuarios_rol_id")
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ProductComment {
+  id           String        @id @default(cuid())
+  productId    String
+  userId       String        @db.VarChar(36)
+  content      String        @db.Text
+  status       CommentStatus @default(PENDING)
+  reviewedById String?       @db.VarChar(36)
+  reviewedAt   DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  product      Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user         Usuarios      @relation("ProductCommentAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy   Usuarios?     @relation("ProductCommentReviewer", fields: [reviewedById], references: [id])
+
+  @@index([productId, status])
+  @@index([userId, status])
 }
 
 model Wishlist {
@@ -272,6 +298,7 @@ model Product {
   orderItems       OrderItem[]
   cartItems        CartItem[]
   wishlistItems    WishlistItem[]
+  comments         ProductComment[]
   coupons          Coupon[]
   providerId       String?
   providerServiceId String?

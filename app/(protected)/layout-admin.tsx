@@ -11,6 +11,7 @@ const links = [
   ["Cupones", "/cupones"],
   ["Métodos de envío", "/metodos-envio"],
   ["Reportes", "/reportes"],
+  ["Comentarios", "/comentarios"],
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {

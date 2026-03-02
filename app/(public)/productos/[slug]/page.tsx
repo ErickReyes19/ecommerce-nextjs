@@ -8,10 +8,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Star, Heart } from "lucide-react";
 import { formatHNL } from "@/src/lib/currency";
-import { getProductDetail, getProductMetadata, getRelatedProducts } from "./actions";
+import { getProductComments, getProductDetail, getProductMetadata, getRelatedProducts } from "./actions";
 import { isValidImageUrl, pickFirstValidImageUrl } from "@/src/lib/image-url";
 import { getWishlistProductIdsForCurrentUser } from "@/src/actions/wishlist-actions";
 import { WishlistButton } from "@/src/components/ecommerce/wishlist-button";
+import { ProductCommentsSection } from "@/src/components/ecommerce/product-comments";
+import { getSession } from "@/auth";
 
 export async function generateMetadata({
   params,
@@ -43,9 +45,11 @@ export default async function ProductDetailPage({
   const images = product.images
     .filter((img) => isValidImageUrl(img.url))
     .map((img) => ({ id: img.id, url: img.url, alt: img.alt ?? product.name, isMain: img.isMain }));
-  const [related, wishlistProductIds] = await Promise.all([
+  const session = await getSession();
+  const [related, wishlistProductIds, comments] = await Promise.all([
     getRelatedProducts(product.id, product.categoryId),
     getWishlistProductIdsForCurrentUser(),
+    getProductComments(product.id, session?.IdUser),
   ]);
   const wishlistSet = new Set(wishlistProductIds);
 
@@ -165,6 +169,15 @@ export default async function ProductDetailPage({
           <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
         </div>
       </div>
+
+
+
+      <ProductCommentsSection
+        productId={product.id}
+        comments={comments}
+        canComment={Boolean(session?.IdUser)}
+        currentUserId={session?.IdUser}
+      />
 
       {related.length > 0 && (
         <section className="mt-20">
