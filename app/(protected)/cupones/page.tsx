@@ -15,8 +15,26 @@ export default async function AdminCuponesPage() {
   return (
     <div className="container mx-auto py-2">
       <HeaderComponent Icon={ListCheck} description="En este apartado podrá ver todos los cupones" screenName="Cupones" />
-      <div className="hidden md:block"><DataTable columns={columns} data={cupones} /></div>
-      <div className="block md:hidden"><CuponesListMobile cupones={cupones} /></div>
+      <div className="hidden md:block">
+        <DataTable columns={columns} data={cupones.map(cupon => ({
+          id: cupon.id,
+          code: cupon.code,
+          type: cupon.type,
+          target: cupon.target,
+          value: typeof cupon.value === "object" && "toNumber" in cupon.value ? cupon.value.toNumber() : Number(cupon.value),
+          active: cupon.active,
+        }))} />
+      </div>
+      <div className="block md:hidden">
+        <CuponesListMobile cupones={cupones.map(cupon => ({
+          id: cupon.id,
+          code: cupon.code,
+          type: cupon.type,
+          target: cupon.target,
+          value: typeof cupon.value === "object" && "toNumber" in cupon.value ? cupon.value.toNumber() : Number(cupon.value),
+          active: cupon.active,
+        }))} />
+      </div>
     </div>
   );
 }
