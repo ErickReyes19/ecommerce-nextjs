@@ -10,7 +10,7 @@ import {
   SheetTrigger,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Menu, ShoppingBag, Search, Circle, Store, Heart } from "lucide-react";
+import { Menu, ShoppingBag, Search, Heart, User, Store, ShoppingCartIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const navLinks = [
@@ -72,7 +72,7 @@ export function StoreNavbar({ cartCount = 0, accountHref = "/login" }: { cartCou
           </Button>
           <Button variant="ghost" size="icon" className="rounded-full" asChild>
             <Link href={accountHref}>
-              <Circle className="h-4 w-4" />
+              <User className="h-4 w-4" />
               <span className="sr-only">Mi cuenta</span>
             </Link>
           </Button>
@@ -83,7 +83,7 @@ export function StoreNavbar({ cartCount = 0, accountHref = "/login" }: { cartCou
             asChild
           >
             <Link href="/carrito">
-              <ShoppingBag className="h-4 w-4" />
+              <ShoppingCartIcon className="h-4 w-4" />
               {cartCount > 0 && (
                 <Badge className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full p-0 text-[10px]">
                   {cartCount}
