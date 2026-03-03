@@ -1,7 +1,7 @@
 import { getSession } from "@/auth";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, ShieldCheck, Gauge, Headphones } from "lucide-react";
+import { ShieldCheck, Gauge, Headphones } from "lucide-react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -34,13 +34,13 @@ export default async function LoginPage({
   if (session) redirect("/mi-perfil");
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-slate-100 text-slate-900">
+    <main className="relative min-h-screen overflow-hidden bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="pointer-events-none absolute inset-0 -z-20 bg-[radial-gradient(circle_at_10%_10%,#38bdf833,transparent_35%),radial-gradient(circle_at_90%_20%,#818cf833,transparent_30%),radial-gradient(circle_at_50%_85%,#14b8a633,transparent_35%)]" />
       <div className="pointer-events-none absolute -left-20 top-24 -z-10 h-72 w-72 rounded-full bg-cyan-200/50 blur-3xl" />
       <div className="pointer-events-none absolute -right-20 bottom-16 -z-10 h-72 w-72 rounded-full bg-violet-200/40 blur-3xl" />
 
       <div className="mx-auto grid min-h-screen max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8 lg:py-10">
-        <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_20px_80px_-35px_rgba(15,23,42,0.45)]">
+        <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_20px_80px_-35px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-slate-900">
           <Image
             src="/images/login.png"
             alt="Escena editorial con periódico y café"
@@ -76,31 +76,22 @@ export default async function LoginPage({
         </section>
 
         <section className="flex items-center justify-center">
-          <Card className="w-full max-w-lg overflow-hidden rounded-3xl border-slate-200 bg-white/95 shadow-[0_20px_80px_-45px_rgba(15,23,42,0.7)] backdrop-blur-xl">
+          <Card className="w-full max-w-lg overflow-hidden rounded-3xl border-slate-200 bg-white/95 shadow-[0_20px_80px_-45px_rgba(15,23,42,0.7)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/90">
             <div className="h-1.5 w-full bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500" />
 
             <CardHeader className="space-y-4 pb-2">
-              <Image
-                src="https://d3dr34vkycigpz.cloudfront.net/wp-content/uploads/2025/09/TiempoHonduras-1-2.webp"
-                alt="Logo de Diario Tiempo"
-                width={190}
-                height={36}
-                className="h-10 w-auto"
-                priority
-              />
               <div className="space-y-2">
-                <CardTitle className="flex items-center gap-2 text-3xl font-bold tracking-tight text-slate-900">
-                  <Sparkles className="size-6 text-cyan-500" />
+                <CardTitle className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
                   Iniciar sesión
                 </CardTitle>
-                <CardDescription className="text-sm leading-relaxed text-slate-500">
+                <CardDescription className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
                   Accede a tu cuenta para administrar publicaciones, métricas y tareas del equipo.
                 </CardDescription>
               </div>
             </CardHeader>
 
             <CardContent className="pt-2">
-              <Suspense fallback={<div className="text-sm text-slate-500">Cargando...</div>}>
+              <Suspense fallback={<div className="text-sm text-slate-500 dark:text-slate-400">Cargando...</div>}>
                 <Login callbackUrl={searchParams.callbackUrl} />
               </Suspense>
             </CardContent>
