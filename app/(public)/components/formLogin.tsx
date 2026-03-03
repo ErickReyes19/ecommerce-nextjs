@@ -3,9 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
+import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 import ForgotPasswordForm from "./forworgot";
@@ -18,7 +25,11 @@ function LoginSubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <Button className="w-full" type="submit" disabled={pending}>
+    <Button
+      className="h-11 w-full bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500 font-semibold text-white transition hover:brightness-110"
+      type="submit"
+      disabled={pending}
+    >
       {pending ? "Ingresando..." : "Ingresar"}
     </Button>
   );
@@ -29,7 +40,11 @@ export default function Login({ callbackUrl }: { callbackUrl?: string }) {
   const [openForgot, setOpenForgot] = useState(false);
   const [openRegister, setOpenRegister] = useState(false);
   const [isSubmittingRegister, setIsSubmittingRegister] = useState(false);
-  const [loginState, loginAction] = useFormState(loginWithCredentialsAction, initialLoginState);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginState, loginAction] = useFormState(
+    loginWithCredentialsAction,
+    initialLoginState
+  );
 
   useEffect(() => {
     if (loginState.ok && loginState.redirect) {
@@ -62,30 +77,55 @@ export default function Login({ callbackUrl }: { callbackUrl?: string }) {
 
   return (
     <>
-      <div className="space-y-4">
-        <form action={loginAction} className="space-y-3 rounded-md border p-4">
+      <div className="space-y-5">
+        <form
+          action={loginAction}
+          className="space-y-4 rounded-2xl border border-white/15 bg-slate-900/40 p-5"
+        >
           <input type="hidden" name="callbackUrl" value={callbackUrl ?? ""} />
-          <div className="space-y-1">
-            <label htmlFor="identifier" className="text-sm font-medium">
+
+          <div className="space-y-1.5">
+            <label htmlFor="identifier" className="text-sm font-medium text-slate-200">
               Usuario o correo
             </label>
-            <Input
-              id="identifier"
-              name="identifier"
-              placeholder="tu_usuario o tu-correo@dominio.com"
-              required
-            />
+            <div className="relative">
+              <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                id="identifier"
+                name="identifier"
+                placeholder="tu_usuario o tu-correo@dominio.com"
+                required
+                className="h-11 border-white/15 bg-slate-950/70 pl-10 text-slate-100 placeholder:text-slate-500"
+              />
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <label htmlFor="contrasena" className="text-sm font-medium">
+          <div className="space-y-1.5">
+            <label htmlFor="contrasena" className="text-sm font-medium text-slate-200">
               Contraseña
             </label>
-            <Input id="contrasena" name="contrasena" type="password" required />
+            <div className="relative">
+              <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                id="contrasena"
+                name="contrasena"
+                type={showPassword ? "text" : "password"}
+                required
+                className="h-11 border-white/15 bg-slate-950/70 pl-10 pr-10 text-slate-100"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-200"
+                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              >
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
           </div>
 
           {loginState.message ? (
-            <p className={`text-sm ${loginState.ok ? "text-green-600" : "text-destructive"}`}>
+            <p className={`text-sm ${loginState.ok ? "text-emerald-400" : "text-rose-400"}`}>
               {loginState.message}
             </p>
           ) : null}
@@ -93,16 +133,29 @@ export default function Login({ callbackUrl }: { callbackUrl?: string }) {
           <LoginSubmitButton />
         </form>
 
-
-        <Button className="w-full" type="button" onClick={() => window.location.assign("/api/auth/google/start")}>
+        <Button
+          className="h-11 w-full border border-white/15 bg-white text-slate-900 hover:bg-slate-100"
+          type="button"
+          onClick={() => window.location.assign("/api/auth/google/start")}
+        >
           Continuar con Google
         </Button>
 
-        <Button className="w-full" variant="outline" type="button" onClick={() => setOpenRegister(true)}>
+        <Button
+          className="h-11 w-full border-white/20 text-slate-100 hover:bg-white/10"
+          variant="outline"
+          type="button"
+          onClick={() => setOpenRegister(true)}
+        >
           Registrarme con correo
         </Button>
 
-        <Button className="w-full" variant="link" type="button" onClick={() => setOpenForgot(true)}>
+        <Button
+          className="w-full text-slate-300 hover:text-white"
+          variant="link"
+          type="button"
+          onClick={() => setOpenForgot(true)}
+        >
           ¿Olvidaste tu contraseña?
         </Button>
       </div>
@@ -116,7 +169,7 @@ export default function Login({ callbackUrl }: { callbackUrl?: string }) {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleRegisterSubmit} className="space-y-4 mt-4">
+          <form onSubmit={handleRegisterSubmit} className="mt-4 space-y-4">
             <div className="space-y-2">
               <label htmlFor="register-email" className="text-sm font-medium">
                 Correo
@@ -132,7 +185,12 @@ export default function Login({ callbackUrl }: { callbackUrl?: string }) {
               />
             </div>
             <div className="flex justify-end space-x-2">
-              <Button variant="outline" type="button" onClick={() => setOpenRegister(false)} disabled={isSubmittingRegister}>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setOpenRegister(false)}
+                disabled={isSubmittingRegister}
+              >
                 Cancelar
               </Button>
               <Button type="submit" disabled={isSubmittingRegister}>
@@ -155,7 +213,9 @@ export default function Login({ callbackUrl }: { callbackUrl?: string }) {
             onCancel={() => setOpenForgot(false)}
             onSuccess={() => {
               setOpenForgot(false);
-              toast.success("Te enviamos un correo con instrucciones para restablecer tu contraseña.");
+              toast.success(
+                "Te enviamos un correo con instrucciones para restablecer tu contraseña."
+              );
               router.push("/login");
             }}
           />
