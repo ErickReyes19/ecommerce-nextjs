@@ -49,12 +49,13 @@ export function FeaturedProducts({
             key={product.id}
             className="group overflow-hidden border-border/50 transition-shadow hover:shadow-lg"
           >
-            <div className="relative aspect-square overflow-hidden bg-secondary">
+            <div className="relative aspect-[4/5] w-full overflow-hidden bg-secondary">
               {product.image ? (
                 <Image
                   src={product.image}
                   alt={product.name}
                   fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               ) : (
