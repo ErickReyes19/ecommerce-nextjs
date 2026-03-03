@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
-import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, Mail, ArrowRight, UserPlus, KeyRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,11 +26,12 @@ function LoginSubmitButton() {
 
   return (
     <Button
-      className="h-11 w-full bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500 font-semibold text-white transition hover:brightness-110"
+      className="group h-11 w-full rounded-xl bg-slate-900 font-semibold text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
       type="submit"
       disabled={pending}
     >
-      {pending ? "Ingresando..." : "Ingresar"}
+      {pending ? "Ingresando..." : "Entrar al panel"}
+      <ArrowRight className="ml-2 size-4 transition group-hover:translate-x-0.5" />
     </Button>
   );
 }
@@ -80,43 +81,44 @@ export default function Login({ callbackUrl }: { callbackUrl?: string }) {
       <div className="space-y-5">
         <form
           action={loginAction}
-          className="space-y-4 rounded-2xl border border-white/15 bg-slate-900/40 p-5"
+          className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800/70"
         >
           <input type="hidden" name="callbackUrl" value={callbackUrl ?? ""} />
 
           <div className="space-y-1.5">
-            <label htmlFor="identifier" className="text-sm font-medium text-slate-200">
+            <label htmlFor="identifier" className="text-sm font-medium text-slate-700 dark:text-slate-200">
               Usuario o correo
             </label>
             <div className="relative">
-              <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+              <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               <Input
                 id="identifier"
                 name="identifier"
-                placeholder="tu_usuario o tu-correo@dominio.com"
+                placeholder="Usuario"
                 required
-                className="h-11 border-white/15 bg-slate-950/70 pl-10 text-slate-100 placeholder:text-slate-500"
+                className="h-11 rounded-xl border-slate-300 bg-white pl-10 text-slate-900 placeholder:text-slate-400 focus-visible:ring-cyan-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="contrasena" className="text-sm font-medium text-slate-200">
+            <label htmlFor="contrasena" className="text-sm font-medium text-slate-700 dark:text-slate-200">
               Contraseña
             </label>
             <div className="relative">
-              <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+              <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               <Input
                 id="contrasena"
                 name="contrasena"
                 type={showPassword ? "text" : "password"}
+                placeholder="Contraseña"
                 required
-                className="h-11 border-white/15 bg-slate-950/70 pl-10 pr-10 text-slate-100"
+                className="h-11 rounded-xl border-slate-300 bg-white pl-10 pr-10 text-slate-900 focus-visible:ring-cyan-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-200"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300"
                 aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
               >
                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -125,7 +127,7 @@ export default function Login({ callbackUrl }: { callbackUrl?: string }) {
           </div>
 
           {loginState.message ? (
-            <p className={`text-sm ${loginState.ok ? "text-emerald-400" : "text-rose-400"}`}>
+            <p className={`text-sm ${loginState.ok ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
               {loginState.message}
             </p>
           ) : null}
@@ -134,30 +136,34 @@ export default function Login({ callbackUrl }: { callbackUrl?: string }) {
         </form>
 
         <Button
-          className="h-11 w-full border border-white/15 bg-white text-slate-900 hover:bg-slate-100"
+          className="h-11 w-full rounded-xl border border-slate-300 bg-white text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
           type="button"
           onClick={() => window.location.assign("/api/auth/google/start")}
         >
           Continuar con Google
         </Button>
 
-        <Button
-          className="h-11 w-full border-white/20 text-slate-100 hover:bg-white/10"
-          variant="outline"
-          type="button"
-          onClick={() => setOpenRegister(true)}
-        >
-          Registrarme con correo
-        </Button>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Button
+            className="h-11 rounded-xl border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+            variant="outline"
+            type="button"
+            onClick={() => setOpenRegister(true)}
+          >
+            <UserPlus className="mr-2 size-4" />
+            Registrarme
+          </Button>
 
-        <Button
-          className="w-full text-slate-300 hover:text-white"
-          variant="link"
-          type="button"
-          onClick={() => setOpenForgot(true)}
-        >
-          ¿Olvidaste tu contraseña?
-        </Button>
+          <Button
+            className="h-11 rounded-xl border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+            variant="outline"
+            type="button"
+            onClick={() => setOpenForgot(true)}
+          >
+            <KeyRound className="mr-2 size-4" />
+            Recuperar acceso
+          </Button>
+        </div>
       </div>
 
       <Dialog open={openRegister} onOpenChange={setOpenRegister}>
