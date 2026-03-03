@@ -24,14 +24,14 @@ export function ProductImageGallery({ images }: { images: GalleryImage[] }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       {/* Main image */}
-      <div className="relative aspect-square overflow-hidden rounded-2xl bg-secondary">
+      <div className="relative aspect-[4/5] w-full max-h-[70svh] overflow-hidden rounded-2xl bg-secondary sm:aspect-square">
         <Image
           src={images[selectedIndex].url}
           alt={images[selectedIndex].alt}
           fill
-          className="object-cover"
+          className="object-contain sm:object-cover"
           priority
         />
       </div>
