@@ -28,10 +28,10 @@ export const authOptions: NextAuthOptions = {
       credentials: { email: {}, password: {} },
       async authorize(credentials) {
         if (!credentials?.email || !credentials.password) return null;
-        const user = await prisma.user.findUnique({ where: { email: credentials.email } });
-        if (!user?.passwordHash) return null;
-        const valid = await bcrypt.compare(credentials.password, user.passwordHash);
-        return valid ? { id: user.id, email: user.email, name: user.name } : null;
+        const user = await prisma.usuario.findUnique({ where: { email: credentials.email } });
+        if (!user?.contrasena) return null;
+        const valid = await bcrypt.compare(credentials.password, user.contrasena);
+        return valid ? { id: user.id, email: user.email, name: user.nombre } : null;
       },
     }),
   ],

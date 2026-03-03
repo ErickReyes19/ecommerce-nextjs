@@ -39,10 +39,10 @@ model Rol {
   updateAt    DateTime     @updatedAt
   activo      Boolean
   permisos    RolPermiso[]
-  usuarios    Usuarios[]
+  usuarios    Usuario[]
 }
 
-model Usuarios {
+model Usuario {
   id                  String               @id @db.VarChar(36)
   usuario             String               @db.VarChar(50)
   contrasena          String               @db.LongText
@@ -59,11 +59,17 @@ model Usuarios {
   activo              Boolean              @db.Bit(1)
   rol                 Rol                  @relation(fields: [rol_id], references: [id])
   PasswordResetToken  PasswordResetToken[]
-  wishlists          Wishlist[]
-  productComments    ProductComment[]      @relation("ProductCommentAuthor")
-  reviewedComments   ProductComment[]      @relation("ProductCommentReviewer")
+  wishlists           Wishlist[]
+  productComments     ProductComment[]      @relation("ProductCommentAuthor")
+  reviewedComments    ProductComment[]      @relation("ProductCommentReviewer")
+  accounts            Account[]
+  sessions            Session[]
+  addresses           Address[]
+  orders              Order[]
+  carts               Cart[]
 
   @@index([rol_id], map: "IX_Usuarios_rol_id")
+  @@map("Usuarios")
 }
 
 enum CommentStatus {
@@ -83,8 +89,8 @@ model ProductComment {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   product      Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user         Usuarios      @relation("ProductCommentAuthor", fields: [userId], references: [id], onDelete: Cascade)
-  reviewedBy   Usuarios?     @relation("ProductCommentReviewer", fields: [reviewedById], references: [id])
+  user         Usuario       @relation("ProductCommentAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy   Usuario?      @relation("ProductCommentReviewer", fields: [reviewedById], references: [id])
 
   @@index([productId, status])
   @@index([userId, status])
@@ -93,7 +99,7 @@ model ProductComment {
 model Wishlist {
   id        String         @id @default(uuid())
   userId    String         @unique @db.VarChar(36)
-  user      Usuarios       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      Usuario        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     WishlistItem[]
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
@@ -117,7 +123,7 @@ model PasswordResetToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  Usuario Usuarios @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Usuario Usuario @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "IX_PasswordResetToken_userId")
 }
@@ -173,31 +179,6 @@ enum DiscountTarget {
   CATEGORY
 }
 
-model Role {
-  id          String @id @default(uuid())
-  name        String @unique
-  description String?
-  users       User[]
-}
-
-model User {
-  id               String    @id @default(uuid())
-  name             String?
-  email            String?   @unique
-  emailVerified    DateTime?
-  image            String?
-  passwordHash     String?
-  roleId           String?
-  role             Role?     @relation(fields: [roleId], references: [id])
-  accounts         Account[]
-  sessions         Session[]
-  addresses        Address[]
-  orders           Order[]
-  carts            Cart[]
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-}
-
 model Account {
   id                String  @id @default(uuid())
   userId            String
@@ -212,7 +193,7 @@ model Account {
   id_token          String? @db.Text
   session_state     String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user Usuario @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -223,7 +204,7 @@ model Session {
   userId       String
   expires      DateTime
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user Usuario @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -250,7 +231,7 @@ model Address {
   isDefault   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        Usuario  @relation(fields: [userId], references: [id], onDelete: Cascade)
   orders      Order[]
 }
 
@@ -374,7 +355,7 @@ model Cart {
   userId    String?
   token     String?    @unique
   items     CartItem[]
-  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      Usuario?   @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 }
@@ -460,7 +441,7 @@ model Order {
   notes            String?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
-  user             User?         @relation(fields: [userId], references: [id])
+  user             Usuario?      @relation(fields: [userId], references: [id])
   address          Address?      @relation(fields: [addressId], references: [id])
   coupon           Coupon?       @relation(fields: [couponId], references: [id])
   items            OrderItem[]

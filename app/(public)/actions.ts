@@ -37,7 +37,7 @@ export async function registerWithEmailAction(formData: FormData) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(normalizedEmail)) return false;
 
-    const existingUser = await prisma.usuarios.findUnique({ where: { email: normalizedEmail } });
+    const existingUser = await prisma.usuario.findUnique({ where: { email: normalizedEmail } });
     if (existingUser) return true;
 
     const clientRole = await prisma.rol.findUnique({ where: { nombre: "CLIENTE" } });
@@ -49,7 +49,7 @@ export async function registerWithEmailAction(formData: FormData) {
     let username = buildUsernameFromEmail(normalizedEmail);
     let suffix = 1;
 
-    while (await prisma.usuarios.findFirst({ where: { usuario: username } })) {
+    while (await prisma.usuario.findFirst({ where: { usuario: username } })) {
         username = `${buildUsernameFromEmail(normalizedEmail)}${suffix}`.slice(0, 50);
         suffix += 1;
     }
@@ -57,7 +57,7 @@ export async function registerWithEmailAction(formData: FormData) {
     const tempPassword = randomBytes(9).toString("base64").slice(0, 12);
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-    await prisma.usuarios.create({
+    await prisma.usuario.create({
         data: {
             id: randomUUID(),
             usuario: username,

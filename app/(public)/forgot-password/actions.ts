@@ -17,7 +17,7 @@ export async function isResetTokenValid(token: string): Promise<boolean> {
 }
 
 export async function requestPasswordReset(username: string): Promise<boolean> {
-  const user = await prisma.usuarios.findFirst({ where: { usuario: username } });
+  const user = await prisma.usuario.findFirst({ where: { usuario: username } });
   if (!user || !user.email) return false;
 
   const token = randomUUID() + randomBytes(16).toString("hex");
@@ -66,7 +66,7 @@ export async function resetPassword(token: string, newPassword: string): Promise
   }
 
   const hashed = await bcrypt.hash(newPassword, 10);
-  await prisma.usuarios.update({
+  await prisma.usuario.update({
     where: { id: record.userId },
     data: { contrasena: hashed, DebeCambiarPassword: false },
   });

@@ -24,7 +24,7 @@ export function buildGoogleAuthorizationUrl(state: string, origin: string) {
 
 async function createSessionToken(payload: {
   IdUser: string;
-  User: string;
+  Usuario: string;
   Nombre?: string | null;
   FotoUrl?: string | null;
   Rol: string;
@@ -71,7 +71,7 @@ export async function exchangeCodeForGoogleProfile(code: string, origin: string)
 export async function getOrCreateGoogleSessionToken(profile: { email: string; name: string; picture: string }) {
   if (!profile.email) throw new Error("Google no devolvió email.");
 
-  let user = await prisma.usuarios.findFirst({
+  let user = await prisma.usuario.findFirst({
     where: { email: profile.email },
     include: { rol: { include: { permisos: { include: { permiso: true } } } } },
   });
@@ -80,7 +80,7 @@ export async function getOrCreateGoogleSessionToken(profile: { email: string; na
     const clientRole = await prisma.rol.findFirst({ where: { OR: [{ nombre: "CLIENTE" }, { nombre: "Cliente" }] } });
     if (!clientRole) throw new Error("No existe el rol CLIENTE para crear usuarios Google.");
 
-    user = await prisma.usuarios.create({
+    user = await prisma.usuario.create({
       data: {
         id: randomUUID(),
         usuario: profile.email,
@@ -97,7 +97,7 @@ export async function getOrCreateGoogleSessionToken(profile: { email: string; na
   }
 
   if ((profile.name && user.nombre !== profile.name) || (profile.picture && user.fotoUrl !== profile.picture)) {
-    user = await prisma.usuarios.update({
+    user = await prisma.usuario.update({
       where: { id: user.id },
       data: {
         nombre: profile.name || user.nombre,
@@ -111,7 +111,7 @@ export async function getOrCreateGoogleSessionToken(profile: { email: string; na
 
   return createSessionToken({
     IdUser: user.id,
-    User: user.usuario,
+    Usuario: user.usuario,
     Nombre: user.nombre,
     FotoUrl: user.fotoUrl,
     Rol: user.rol.nombre,

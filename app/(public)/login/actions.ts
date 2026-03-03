@@ -24,7 +24,7 @@ export async function loginWithCredentialsAction(
   let usuario = normalizedIdentifier;
 
   if (normalizedIdentifier.includes("@")) {
-    const userByEmail = await prisma.usuarios.findUnique({
+    const userByEmail = await prisma.usuario.findUnique({
       where: { email: normalizedIdentifier },
       select: { usuario: true },
     });

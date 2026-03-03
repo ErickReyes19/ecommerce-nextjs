@@ -115,7 +115,7 @@ async function seedLegacyAuth() {
   const password = await bcrypt.hash("Admin123*", 10);
   const adminId = randomUUID();
 
-  await prisma.usuarios.upsert({
+  await prisma.usuario.upsert({
     where: { email: "admin@ecommerce.local" },
     update: {
       usuario: "admin",

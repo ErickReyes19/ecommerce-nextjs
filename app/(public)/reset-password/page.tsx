@@ -36,7 +36,7 @@ export default async function Page() {
 
               <div className="mt-6">
                 <Suspense fallback={<div className="text-center text-slate-300">Cargando…</div>}>
-                  <ResetPassword username={session.User} />
+                  <ResetPassword username={session.Usuario} />
                 </Suspense>
               </div>
             </div>

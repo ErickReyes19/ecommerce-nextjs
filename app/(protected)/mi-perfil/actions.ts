@@ -25,7 +25,7 @@ export async function updateMiPerfil(
   const ciudad = String(formData.get("ciudad") ?? "").trim();
   const telefono = String(formData.get("telefono") ?? "").trim();
 
-  await prisma.usuarios.update({
+  await prisma.usuario.update({
     where: { id: session.IdUser },
     data: {
       direccion: direccion || null,
@@ -62,7 +62,7 @@ export async function changeMiPerfilPassword(
     return { ok: false, message: "La nueva contraseña debe tener mínimo 8 caracteres." };
   }
 
-  const user = await prisma.usuarios.findUnique({
+  const user = await prisma.usuario.findUnique({
     where: { id: session.IdUser },
     include: { rol: { include: { permisos: { include: { permiso: true } } } } },
   });
@@ -77,7 +77,7 @@ export async function changeMiPerfilPassword(
   }
 
   const hashedPassword = await bcrypt.hash(nueva, 10);
-  const updated = await prisma.usuarios.update({
+  const updated = await prisma.usuario.update({
     where: { id: user.id },
     data: {
       contrasena: hashedPassword,
@@ -90,7 +90,7 @@ export async function changeMiPerfilPassword(
 
   const token = await encrypt({
     IdUser: updated.id,
-    User: updated.usuario,
+    Usuario: updated.usuario,
     Rol: updated.rol.nombre,
     Nombre: updated.nombre,
     FotoUrl: updated.fotoUrl,

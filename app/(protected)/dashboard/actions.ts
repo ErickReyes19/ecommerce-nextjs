@@ -7,7 +7,7 @@ export async function getDashboardKpis() {
     await Promise.all([
       prisma.product.count(),
       prisma.order.count(),
-      prisma.user.count(),
+      prisma.usuario.count(),
       prisma.order.count({ where: { status: "PAGADO" } }),
       prisma.coupon.count({ where: { active: true } }),
       prisma.shippingMethod.count({ where: { active: true } }),

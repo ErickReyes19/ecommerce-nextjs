@@ -29,7 +29,7 @@ export async function getCheckoutData(token: string | undefined, sessionUserId: 
 
   const [methods, currentUser] = await Promise.all([
     prisma.shippingMethod.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
-    prisma.usuarios.findUnique({
+    prisma.usuario.findUnique({
       where: { id: sessionUserId },
       select: { nombre: true, email: true, telefono: true, direccion: true, ciudad: true },
     }),

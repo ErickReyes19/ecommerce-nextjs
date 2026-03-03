@@ -16,7 +16,7 @@ const key = new TextEncoder().encode(process.env.AUTH_SECRET!);
 
 export interface UsuarioSesion extends JWTPayload {
   IdUser: string;
-  User: string;
+  Usuario: string;
   Nombre?: string | null;
   FotoUrl?: string | null;
   Rol: string;
@@ -40,7 +40,7 @@ export const decrypt = async (token: string): Promise<UsuarioSesion | null> => {
     const { payload } = await jwtVerify<JWTPayload>(token, key, { algorithms: ["HS256"] });
     return {
       IdUser: payload.IdUser as string,
-      User: payload.User as string,
+      Usuario: payload.Usuario as string,
       Rol: payload.Rol as string,
       Nombre: payload.Nombre as string | null,
       FotoUrl: payload.FotoUrl as string | null,
@@ -127,17 +127,17 @@ export const resetPassword = async (credentials: TSchemaResetPassword, username:
 // ------------------------------
 // AUTENTICACIÓN CON BASE DE DATOS (Prisma)
 // ------------------------------
-const usuarioWithRolArgs = Prisma.validator<Prisma.UsuariosDefaultArgs>()({
+const usuarioWithRolArgs = Prisma.validator<Prisma.UsuarioDefaultArgs>()({
   include: {
     rol: { include: { permisos: { include: { permiso: true } } } },
 
   },
 });
-type UsuarioConRol = Prisma.UsuariosGetPayload<typeof usuarioWithRolArgs>;
+type UsuarioConRol = Prisma.UsuarioGetPayload<typeof usuarioWithRolArgs>;
 
 async function authenticateDB(username: string, password: string): Promise<AuthDbResult | null> {
   try {
-    const user: UsuarioConRol | null = await prisma.usuarios.findFirst({
+    const user: UsuarioConRol | null = await prisma.usuario.findFirst({
       where: { usuario: username },
       include: usuarioWithRolArgs.include,
     });
@@ -147,7 +147,7 @@ async function authenticateDB(username: string, password: string): Promise<AuthD
 
     const payload: UsuarioSesion = {
       IdUser: user.id,
-      User: user.usuario,
+      Usuario: user.usuario,
       Rol: user.rol.nombre,
       Nombre: user.nombre,
       FotoUrl: user.fotoUrl,
@@ -173,14 +173,14 @@ async function authenticateDB(username: string, password: string): Promise<AuthD
 // ------------------------------
 async function changePassword(username: string, newPassword: string): Promise<string | null> {
   try {
-    const user = await prisma.usuarios.findFirst({
+    const user = await prisma.usuario.findFirst({
       where: { usuario: username },
       include: usuarioWithRolArgs.include,
     });
     if (!user) return null;
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    const updated = await prisma.usuarios.update({
+    const updated = await prisma.usuario.update({
       where: { id: user.id },
       data: { contrasena: hashedPassword, DebeCambiarPassword: false },
       include: usuarioWithRolArgs.include,
@@ -189,7 +189,7 @@ async function changePassword(username: string, newPassword: string): Promise<st
     const permisos = updated.rol.permisos.map((rp: { permiso: { nombre: any; }; }) => rp.permiso.nombre);
     const payload: UsuarioSesion = {
       IdUser: updated.id,
-      User: updated.usuario,
+      Usuario: updated.usuario,
       Rol: updated.rol.nombre,
       Nombre: updated.nombre,
       FotoUrl: updated.fotoUrl,

@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 
 export async function getPerfilData(userId: string) {
-  return prisma.user.findUnique({
+  return prisma.usuario.findUnique({
     where: { id: userId },
     include: {
       orders: {

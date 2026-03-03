@@ -16,7 +16,7 @@ type CreateUsuarioResult = {
  * Obtener todos los usuarios con rol y empleado
  */
 export async function getUsuarios(): Promise<Usuario[]> {
-  const records = await prisma.usuarios.findMany({
+  const records = await prisma.usuario.findMany({
     include: {
       rol: { select: { id: true, nombre: true } },
     },
@@ -42,7 +42,7 @@ export async function createUsuario(data: Usuario): Promise<CreateUsuarioResult>
   const hashed = await bcrypt.hash(tempPassword, 10);
 
   // 3️⃣ Crear el usuario en la base de datos
-  const newUser = await prisma.usuarios.create({
+  const newUser = await prisma.usuario.create({
     data: {
       id: randomUUID(),
       usuario: data.usuario,
@@ -100,7 +100,7 @@ export async function createUsuario(data: Usuario): Promise<CreateUsuarioResult>
  * Actualizar un usuario existente
  */
 export async function updateUsuario(data: Usuario): Promise<Usuario> {
-  const updated = await prisma.usuarios.update({
+  const updated = await prisma.usuario.update({
     where: { id: data.id },
     data: {
       usuario: data.usuario,
@@ -123,7 +123,7 @@ export async function updateUsuario(data: Usuario): Promise<Usuario> {
  * Obtener usuario por ID
  */
 export async function getUsuarioById(id: string): Promise<Usuario | null> {
-  const r = await prisma.usuarios.findUnique({
+  const r = await prisma.usuario.findUnique({
     where: { id },
     include: {
       rol: { select: { nombre: true } },
@@ -141,7 +141,7 @@ export async function getUsuarioById(id: string): Promise<Usuario | null> {
 }
 
 export async function getUsuariosOpciones(): Promise<Array<{ id: string; usuario: string }>> {
-  const records = await prisma.usuarios.findMany({
+  const records = await prisma.usuario.findMany({
     select: { id: true, usuario: true },
     orderBy: { usuario: "asc" },
   });
