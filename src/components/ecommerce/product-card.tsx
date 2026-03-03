@@ -33,12 +33,13 @@ export function ProductCard({ product }: Props) {
   return (
     <Card className="group overflow-hidden border-border/50 transition-shadow hover:shadow-lg">
       <Link href={`/productos/${product.slug}`}>
-        <div className="relative aspect-square overflow-hidden bg-secondary">
+        <div className="relative aspect-[4/5] w-full overflow-hidden bg-secondary">
           {product.image ? (
             <Image
               src={product.image}
               alt={product.name}
               fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
