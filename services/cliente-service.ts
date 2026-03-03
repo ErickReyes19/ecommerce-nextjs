@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
 export async function getMiPerfil(usuarioId: string) {
-  return prisma.usuarios.findUnique({
+  return prisma.usuario.findUnique({
     where: { id: usuarioId },
     select: {
       id: true,
