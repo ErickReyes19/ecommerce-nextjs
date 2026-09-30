@@ -86,7 +86,7 @@ export function CheckoutLayout({
             <span>{moneyFormatter("HNL", totals.grandTotal)}</span>
           </div>
           <Button type="submit" form="pixelpay-checkout-form" className="w-full">
-            Pagar con PixelPay
+            Ir a pagar con PixelPay
           </Button>
         </CardContent>
       </Card>

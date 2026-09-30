@@ -35,7 +35,7 @@ export default async function PedidoDetallePage({ params }: { params: Promise<{ 
         <CardContent className="grid gap-4 text-sm md:grid-cols-2">
           <div>
             <p className="text-muted-foreground">Usuario</p>
-            <p className="font-medium">{pedido.user?.name ?? pedido.user?.email ?? "Cliente no identificado"}</p>
+            <p className="font-medium">{pedido.user?.nombre ?? pedido.user?.email ?? "Cliente no identificado"}</p>
           </div>
           <div>
             <p className="text-muted-foreground">Fecha</p>

@@ -7,7 +7,11 @@ const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
 
-const jwtKey = new TextEncoder().encode(process.env.AUTH_SECRET ?? "");
+function getJwtKey() {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) throw new Error("Falta AUTH_SECRET en las variables de entorno.");
+  return new TextEncoder().encode(secret);
+}
 
 export function buildGoogleAuthorizationUrl(state: string, origin: string) {
   const params = new URLSearchParams({
@@ -35,7 +39,7 @@ async function createSessionToken(payload: {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("6h")
-    .sign(jwtKey);
+    .sign(getJwtKey());
 }
 
 export async function exchangeCodeForGoogleProfile(code: string, origin: string) {

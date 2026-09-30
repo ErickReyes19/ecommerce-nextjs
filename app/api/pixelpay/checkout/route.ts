@@ -2,95 +2,19 @@ import { getSession } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { revalidatePath } from "next/cache";
-import Settings from "@pixelpay/sdk-core/lib/models/Settings";
-import TransactionService from "@pixelpay/sdk-core/lib/services/Transaction";
 import { getOrCreateEcommerceUserBySessionUserId } from "@/src/lib/ecommerce-user";
+import { createHostedPaymentLink } from "@/lib/pixelpay-hosted";
+import { failPixelPayPayment, type PaymentMetadata } from "@/lib/pixelpay-settle";
+
+export const runtime = "nodejs";
 
 const PAYMENT_PROVIDER = "PIXELPAY";
 const PAYMENT_CURRENCY = "HNL";
-
-type PixelPayResult = {
-  id?: string;
-  status?: number | string;
-  success?: boolean;
-  message?: string;
-  code?: number | string;
-  statusCode?: number | string;
-  httpCode?: number | string;
-  responseType?: string;
-  type?: string;
-  payment_hash?: string;
-  data?: {
-    response_approved?: boolean;
-    [key: string]: unknown;
-  };
-  [key: string]: unknown;
-};
-
-type PaymentMetadata = {
-  reference: string;
-  cartId?: string;
-  userSessionId: string;
-  providerResult?: PixelPayResult;
-};
 
 type CouponContext = {
   subtotal: number;
   items: Array<{ productId: string; categoryId: string | null; lineTotal: number }>;
 };
-
-function parseHttpCode(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
-function isSuccessfulPixelPayResponse(result: PixelPayResult | undefined): boolean {
-  const httpCode =
-    parseHttpCode(result?.httpCode) ??
-    parseHttpCode(result?.statusCode) ??
-    parseHttpCode(result?.code) ??
-    parseHttpCode(result?.status);
-
-  if (httpCode && (httpCode < 200 || httpCode > 299)) {
-    return false;
-  }
-
-  if (result?.success === true && result?.data?.response_approved === true) {
-    return true;
-  }
-
-  const status = String(result?.status ?? "").toUpperCase();
-  const message = String(result?.message ?? "").toUpperCase();
-  return status.includes("APPROV") || status.includes("PAID") || message.includes("APPROV");
-}
-
-type TransactionServiceInstance = InstanceType<typeof TransactionService> & {
-  verifyPaymentHash?: (paymentHash: string, orderId: string, secret: string) => boolean;
-};
-
-function verifyPaymentHash(result: PixelPayResult | undefined, reference: string | undefined): boolean | null {
-  const paymentHash = typeof result?.payment_hash === "string" ? result.payment_hash : null;
-  if (!paymentHash) return null;
-  if (!reference) return false;
-
-  const endpoint = process.env.NEXT_PUBLIC_PIXELPAY_ENDPOINT ?? "";
-  const keyId = process.env.PIXELPAY_KEY_ID || process.env.NEXT_PUBLIC_PIXELPAY_KEY_ID || "";
-  const keyHash = process.env.PIXELPAY_KEY_HASH || process.env.NEXT_PUBLIC_PIXELPAY_KEY_HASH || "";
-  if (!keyHash) return false;
-
-  const settings = new Settings();
-  settings.setupEndpoint?.(endpoint);
-  settings.setupCredentials?.(keyId, keyHash);
-
-  const service = new TransactionService(settings) as TransactionServiceInstance;
-  if (typeof service.verifyPaymentHash !== "function") return false;
-  return service.verifyPaymentHash(paymentHash, reference, keyHash);
-}
 
 async function calculateDiscount(couponCode: string | undefined, context: CouponContext) {
   if (!couponCode?.trim()) {
@@ -210,6 +134,19 @@ export async function GET(request: Request) {
   });
 }
 
+
+type CheckoutCustomer = {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  zip?: string;
+};
+
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session?.IdUser) {
@@ -221,9 +158,11 @@ export async function POST(request: Request) {
     shippingMethodId?: string;
     addressId?: string;
     couponCode?: string;
+    customer?: CheckoutCustomer;
   };
 
-  if (!body.cartId) {
+  const customerEmail = body.customer?.email?.trim();
+  if (!body.cartId || !customerEmail) {
     return NextResponse.json({ ok: false, message: "Faltan datos para inicializar checkout" }, { status: 400 });
   }
 
@@ -256,6 +195,10 @@ export async function POST(request: Request) {
     return {
       productId: item.productId,
       categoryId: item.product.categoryId,
+      code: item.variant?.sku ?? item.productId,
+      title: item.variant ? `${item.product.name} - ${item.variant.name}` : item.product.name,
+      unitPrice,
+      quantity: item.quantity,
       lineTotal: unitPrice * item.quantity,
     };
   });
@@ -264,7 +207,12 @@ export async function POST(request: Request) {
   const discount = await calculateDiscount(body.couponCode, { subtotal, items: lines });
   const grandTotal = Math.max(0, subtotal + shippingTotal - discount.discountTotal);
 
-  const reference = `PIX-${Date.now()}`;
+  if (grandTotal <= 0) {
+    return NextResponse.json({ ok: false, message: "El total debe ser mayor a cero" }, { status: 400 });
+  }
+
+  // Hosted exige _order_id alfanumérico (sin guiones)
+  const reference = `PIX${Date.now()}`;
 
   const order = await prisma.order.create({
     data: {
@@ -278,16 +226,13 @@ export async function POST(request: Request) {
       grandTotal,
       couponId: discount.couponId,
       items: {
-        create: cart.items.map((item) => {
-          const unitPrice = Number(item.variant?.salePrice ?? item.variant?.price ?? item.product.basePrice);
-          return {
-            productId: item.productId,
-            variantId: item.variantId,
-            quantity: item.quantity,
-            unitPrice,
-            totalPrice: unitPrice * item.quantity,
-          };
-        }),
+        create: lines.map((line, index) => ({
+          productId: line.productId,
+          variantId: cart.items[index].variantId,
+          quantity: line.quantity,
+          unitPrice: line.unitPrice,
+          totalPrice: line.lineTotal,
+        })),
       },
       history: {
         create: { status: "PENDIENTE", note: "Orden inicializada para pago con PixelPay" },
@@ -313,147 +258,43 @@ export async function POST(request: Request) {
     },
   });
 
-  return NextResponse.json({
-    ok: true,
-    pagoId: payment.id,
-    orderId: order.id,
-    paymentData: {
-      amount: grandTotal,
-      currency: PAYMENT_CURRENCY,
-      reference,
-      description: `Orden ${order.orderNumber}`,
+  // PixelPay valida que la suma de los items coincida con _amount. Con envío o cupón no coincide,
+  // así que en ese caso se manda un único item con el total de la orden.
+  const itemsTotal = Number(subtotal.toFixed(2));
+  const items =
+    itemsTotal === Number(grandTotal.toFixed(2))
+      ? lines.map((line) => ({ code: line.code, title: line.title, price: line.unitPrice, qty: line.quantity }))
+      : [{ code: order.orderNumber, title: `Orden ${order.orderNumber}`, price: Number(grandTotal.toFixed(2)), qty: 1 }];
+
+  const hosted = await createHostedPaymentLink({
+    request,
+    paymentId: payment.id,
+    reference,
+    amount: grandTotal,
+    currency: PAYMENT_CURRENCY,
+    items,
+    customer: {
+      firstName: body.customer?.firstName,
+      lastName: body.customer?.lastName,
+      email: customerEmail,
+      phone: body.customer?.phone,
+      address: body.customer?.address,
+      city: body.customer?.city,
+      state: body.customer?.state,
+      country: body.customer?.country,
+      zip: body.customer?.zip,
     },
   });
-}
 
-export async function PUT(request: Request) {
-  const session = await getSession();
-  if (!session?.IdUser) {
-    return NextResponse.json({ ok: false, message: "Sesión inválida" }, { status: 401 });
+  if (!hosted.ok) {
+    await failPixelPayPayment(payment.id, "No se pudo generar el enlace de PixelPay", hosted.diagnostics);
+    return NextResponse.json({ ok: false, message: hosted.message }, { status: hosted.status });
   }
 
-  const body = (await request.json()) as {
-    pagoId?: string;
-    result?: PixelPayResult;
-    isValidPayment?: boolean;
-    reference?: string;
-  };
-
-  if (!body.pagoId) {
-    return NextResponse.json({ ok: false, message: "Pago no especificado" }, { status: 400 });
-  }
-
-  const payment = await prisma.payment.findUnique({
-    where: { id: body.pagoId },
-    include: { order: true },
+  await prisma.payment.update({
+    where: { id: payment.id },
+    data: { rawPayload: JSON.stringify({ ...metadata, hostedPaymentUrl: hosted.paymentUrl }) },
   });
 
-  if (!payment) {
-    return NextResponse.json({ ok: false, message: "Pago no encontrado" }, { status: 404 });
-  }
-
-  const metadata = payment.rawPayload ? (JSON.parse(payment.rawPayload) as PaymentMetadata) : null;
-  if (!metadata || metadata.userSessionId !== session.IdUser) {
-    return NextResponse.json({ ok: false, message: "No autorizado para operar este pago" }, { status: 403 });
-  }
-
-  if (payment.status === "PAID") {
-    return NextResponse.json({ ok: true, orderId: payment.orderId });
-  }
-
-  const hashIsValid = verifyPaymentHash(body.result, body.reference);
-  const approvedByProvider = isSuccessfulPixelPayResponse(body.result);
-  const isValidPayment = body.isValidPayment !== false && hashIsValid !== false && approvedByProvider;
-
-  if (!isValidPayment) {
-    await prisma.$transaction([
-      prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: "FAILED",
-          rawPayload: JSON.stringify({
-            ...metadata,
-            providerResult: body.result,
-          }),
-        },
-      }),
-      prisma.orderHistory.create({
-        data: {
-          orderId: payment.orderId,
-          status: "CANCELADO",
-          note: "Pago rechazado por PixelPay",
-        },
-      }),
-      prisma.order.update({
-        where: { id: payment.orderId },
-        data: { status: "CANCELADO" },
-      }),
-    ]);
-
-    return NextResponse.json({ ok: true, message: "Pago rechazado" });
-  }
-
-  const referenceDoesNotMatch = Boolean(body.reference && body.reference !== metadata.reference);
-  if (referenceDoesNotMatch) {
-    return NextResponse.json({ ok: false, message: "Referencia de pago inválida" }, { status: 400 });
-  }
-
-  await prisma.$transaction(async (tx) => {
-    const orderItems = await tx.orderItem.findMany({ where: { orderId: payment.orderId } });
-
-    for (const item of orderItems) {
-      if (item.variantId) {
-        await tx.productVariant.update({
-          where: { id: item.variantId },
-          data: { stock: { decrement: item.quantity } },
-        });
-      } else {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            variants: {
-              updateMany: {
-                where: { isDefault: true },
-                data: { stock: { decrement: item.quantity } },
-              },
-            },
-          },
-        });
-      }
-    }
-
-    await tx.payment.update({
-      where: { id: payment.id },
-      data: {
-        status: "PAID",
-        providerRef: body.reference ?? metadata.reference,
-        rawPayload: JSON.stringify({
-          ...metadata,
-          providerResult: body.result,
-        }),
-      },
-    });
-
-    await tx.order.update({
-      where: { id: payment.orderId },
-      data: { status: "PAGADO" },
-    });
-
-    await tx.orderHistory.create({
-      data: {
-        orderId: payment.orderId,
-        status: "PAGADO",
-        note: "Pago aprobado con PixelPay",
-      },
-    });
-
-    if (metadata.cartId) {
-      await tx.cartItem.deleteMany({ where: { cartId: metadata.cartId } });
-    }
-  });
-
-  revalidatePath("/carrito");
-  revalidatePath("/perfil");
-
-  return NextResponse.json({ ok: true, orderId: payment.orderId });
+  return NextResponse.json({ ok: true, paymentId: payment.id, orderId: order.id, paymentUrl: hosted.paymentUrl });
 }

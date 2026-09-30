@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { FormEvent, useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Locations from "@pixelpay/sdk-core/lib/resources/Locations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,10 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { runPixelPayCheckout } from "./pixelpay.service";
+import { startPixelPayHostedCheckout } from "./pixelpay.service";
 import { CheckoutTotals, PixelPayCheckoutProps } from "./pixelpay.types";
 import { moneyFormatter } from "./pixelpay.utils";
-import { LOCAL_CART_KEY, writeLocalCart } from "@/src/lib/local-cart";
 
 export function PixelPayCheckout({
   cartId,
@@ -37,7 +35,6 @@ export function PixelPayCheckout({
     return value as Record<string, string>;
   };
 
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [shippingMethodId, setShippingMethodId] = useState<string>(shippingMethods[0]?.id ?? "");
   const [shippingPrice, setShippingPrice] = useState<number>(shippingMethods[0]?.price ?? 0);
@@ -70,11 +67,6 @@ export function PixelPayCheckout({
   const [form, setForm] = useState({
     addressId: "",
     couponCode: couponCodeToValidate,
-    card_holder: defaultCustomerName,
-    card_number: "",
-    card_exp_month: "",
-    card_exp_year: "",
-    card_cvv: "",
     billing_name: defaultCustomerName,
     billing_last_name: defaultCustomerName.split(" ")[1] || "",
     billing_email: defaultCustomerEmail,
@@ -140,22 +132,15 @@ export function PixelPayCheckout({
 
     startTransition(async () => {
       try {
-        toast.loading("Procesando pago con PixelPay...", { id: "pixelpay-checkout" });
+        toast.loading("Generando enlace seguro de pago...", { id: "pixelpay-checkout" });
 
-        const response = await runPixelPayCheckout({
+        await startPixelPayHostedCheckout({
           checkout: {
             cartId,
             shippingMethodId: shippingMethodId || undefined,
             shippingPrice,
             addressId: form.addressId || undefined,
             couponCode: couponCodeToValidate || undefined,
-          },
-          card: {
-            card_holder: form.card_holder,
-            card_number: form.card_number,
-            card_exp_month: form.card_exp_month,
-            card_exp_year: form.card_exp_year,
-            card_cvv: form.card_cvv,
           },
           billing: {
             billing_name: form.billing_name,
@@ -169,20 +154,10 @@ export function PixelPayCheckout({
             billing_postal_code: form.billing_postal_code,
           },
         });
-
-        if (!response.isValidPayment) {
-          toast.error("El pago fue rechazado. Verifica tu tarjeta e inténtalo de nuevo.", { id: "pixelpay-checkout" });
-          return;
-        }
-
-        toast.success("Pago aprobado. Pedido generado correctamente.", { id: "pixelpay-checkout" });
-        writeLocalCart({ items: [], updatedAt: new Date().toISOString() });
-        if (typeof window !== "undefined") {
-          window.localStorage.removeItem(LOCAL_CART_KEY);
-        }
-        router.push(`/perfil?orderId=${response.orderId ?? ""}`);
+        // El navegador ya se está yendo a PixelPay. El carrito local se vacía en /checkout/resultado,
+        // así no se pierde si el cliente cancela.
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Error al procesar pago", { id: "pixelpay-checkout" });
+        toast.error(error instanceof Error ? error.message : "Error al generar el pago", { id: "pixelpay-checkout" });
       }
     });
   };
@@ -272,21 +247,17 @@ export function PixelPayCheckout({
             </div>
 
             <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
-              <p className="text-sm font-medium text-muted-foreground">Tarjeta</p>
+              <p className="text-sm font-medium text-muted-foreground">Pago</p>
               <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
-                <p>Tus datos de tarjeta van cifrados. Checkout protegido por Ficohsa, 3DS Secure y PixelPay.</p>
+                <p>
+                  Serás redirigido a la página segura de PixelPay para completar el pago. No ingresas datos de
+                  tarjeta en este sitio. Protegido por Ficohsa, 3DS Secure y PixelPay.
+                </p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <Image src="/images/ficohsa.png" alt="Ficohsa" width={120} height={32} className="h-8 w-auto" />
                   <Image src="/images/3ds.png" alt="3DS Secure" width={120} height={32} className="h-8 w-auto" />
                   <Image src="/images/pixelpay.png" alt="PixelPay" width={120} height={32} className="h-8 w-auto" />
                 </div>
-              </div>
-              <div className="space-y-2"><Label>Nombre en tarjeta</Label><Input placeholder="Como aparece en la tarjeta" value={form.card_holder} onChange={(e) => setForm((prev) => ({ ...prev, card_holder: e.target.value }))} /></div>
-              <div className="space-y-2"><Label>Número de tarjeta</Label><Input placeholder="0000 0000 0000 0000" value={form.card_number} onChange={(e) => setForm((prev) => ({ ...prev, card_number: e.target.value }))} inputMode="numeric" maxLength={19} /></div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-2"><Label>Mes (MM)</Label><Input placeholder="08" value={form.card_exp_month} onChange={(e) => setForm((prev) => ({ ...prev, card_exp_month: e.target.value }))} inputMode="numeric" maxLength={2} /></div>
-                <div className="space-y-2"><Label>Año (YY)</Label><Input placeholder="29" value={form.card_exp_year} onChange={(e) => setForm((prev) => ({ ...prev, card_exp_year: e.target.value }))} inputMode="numeric" maxLength={2} /></div>
-                <div className="space-y-2"><Label>CVV</Label><Input placeholder="123" value={form.card_cvv} onChange={(e) => setForm((prev) => ({ ...prev, card_cvv: e.target.value }))} inputMode="numeric" maxLength={4} /></div>
               </div>
             </div>
           </div>

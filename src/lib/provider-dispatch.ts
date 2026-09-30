@@ -102,7 +102,7 @@ export async function dispatchOrderToProviders(orderId: string) {
       },
       customer: {
         id: order.user?.id,
-        name: order.user?.name,
+        name: order.user?.nombre,
         email: order.user?.email,
         address: order.address,
       },

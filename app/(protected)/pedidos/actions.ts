@@ -21,7 +21,7 @@ export async function getPedidos() {
     include: {
       user: {
         select: {
-          name: true,
+          nombre: true,
           email: true,
         },
       },
@@ -35,7 +35,7 @@ export async function getPedidos() {
     subtotal: Number(order.subtotal),
     grandTotal: Number(order.grandTotal),
     createdAt: order.createdAt,
-    userName: order.user?.name ?? order.user?.email ?? "Cliente no identificado",
+    userName: order.user?.nombre ?? order.user?.email ?? "Cliente no identificado",
   }));
 }
 
@@ -49,7 +49,7 @@ export async function getPedidoDetalleById(id: string) {
     include: {
       user: {
         select: {
-          name: true,
+          nombre: true,
           email: true,
         },
       },

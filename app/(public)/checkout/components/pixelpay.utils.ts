@@ -1,46 +1,19 @@
-import { BillingData, CardData, InitCheckoutPayload } from "./pixelpay.types";
+import { BillingData, InitCheckoutPayload } from "./pixelpay.types";
 
-export function validateCheckoutInput(input: {
-  checkout: InitCheckoutPayload;
-  card: CardData;
-  billing: BillingData;
-}) {
-  const requiredCheckout: Array<keyof InitCheckoutPayload> = ["cartId"];
-  for (const key of requiredCheckout) {
-    if (!input.checkout[key]) {
-      throw new Error(`Falta el campo obligatorio: ${key}`);
-    }
+export function validateCheckoutInput(input: { checkout: InitCheckoutPayload; billing: BillingData }) {
+  if (!input.checkout.cartId) {
+    throw new Error("Falta el campo obligatorio: cartId");
   }
 
-  const requiredCard: Array<keyof CardData> = [
-    "card_number",
-    "card_cvv",
-    "card_exp_month",
-    "card_exp_year",
-    "card_holder",
+  const requiredBilling: Array<[keyof BillingData, string]> = [
+    ["billing_name", "nombre"],
+    ["billing_email", "email"],
+    ["billing_street", "dirección"],
   ];
 
-  for (const key of requiredCard) {
-    if (!input.card[key]?.trim()) {
-      throw new Error(`Falta el dato de tarjeta: ${key}`);
-    }
-  }
-
-  const requiredBilling: Array<keyof BillingData> = [
-    "billing_name",
-    "billing_last_name",
-    "billing_email",
-    "billing_phone",
-    "billing_street",
-    "billing_city",
-    "billing_state",
-    "billing_country",
-    "billing_postal_code",
-  ];
-
-  for (const key of requiredBilling) {
+  for (const [key, label] of requiredBilling) {
     if (!input.billing[key]?.trim()) {
-      throw new Error(`Falta el dato de facturación: ${key}`);
+      throw new Error(`Falta el dato de facturación: ${label}`);
     }
   }
 }
