@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { pickFirstValidImageUrl } from "@/src/lib/image-url";
-import { onlyRealDeals, pickDistinctByCategory } from "@/src/lib/portada-select";
+import { onlyRealDeals, pickDistinctByCategory, withImage } from "@/src/lib/portada-select";
 import { getWishlistProductIdsForCurrentUser } from "@/src/actions/wishlist-actions";
 
 export type PortadaProduct = {
@@ -107,13 +107,13 @@ export async function getPortadaData(): Promise<PortadaData> {
       prisma.product.findMany({
         where: { ...activeProduct, compareAtPrice: { not: null } },
         orderBy: { rating: "desc" },
-        take: 40,
+        take: 60,
         include: productInclude,
       }),
       prisma.product.findMany({
         where: activeProduct,
         orderBy: { createdAt: "desc" },
-        take: LATEST_COUNT,
+        take: 32,
         include: productInclude,
       }),
       prisma.product.count({ where: activeProduct }),
@@ -135,8 +135,8 @@ export async function getPortadaData(): Promise<PortadaData> {
     return {
       hero: pickDistinctByCategory(topRated.map(toProduct), HERO_COUNT),
       categories,
-      deals: onlyRealDeals(dealRows.map(toProduct)).slice(0, DEALS_COUNT),
-      latest: latestRows.map(toProduct),
+      deals: withImage(onlyRealDeals(dealRows.map(toProduct)), DEALS_COUNT),
+      latest: withImage(latestRows.map(toProduct), LATEST_COUNT),
       totals: { products: productCount, categories: categoryRows.length },
     };
   } catch (error) {

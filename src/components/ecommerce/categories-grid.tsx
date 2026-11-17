@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { ShoppingBag } from "lucide-react";
 import { SectionHeader } from "@/src/components/ecommerce/section-header";
 import { getCategoryLabel } from "@/src/lib/category-labels";
 import type { PortadaCategory } from "@/app/(public)/portada-data";
@@ -31,7 +32,11 @@ export function CategoriesGrid({ categories }: { categories: PortadaCategory[] }
                     sizes="(max-width: 768px) 42vw, 20vw"
                     className="object-contain p-[14%]"
                   />
-                ) : null}
+                ) : (
+                  <div className="flex h-full items-center justify-center">
+                    <ShoppingBag aria-hidden="true" className="h-10 w-10 text-muted-foreground/40" />
+                  </div>
+                )}
               </div>
               <p className="mt-3 font-condensed text-[22px] font-bold leading-tight transition-colors group-hover:text-primary">
                 {getCategoryLabel(category)}

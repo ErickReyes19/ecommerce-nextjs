@@ -84,7 +84,7 @@ export function HeroSection({
                   href={`/productos/${product.slug}`}
                   className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-vitrina">
+                  <div className="relative aspect-square overflow-hidden rounded-lg bg-vitrina">
                     {product.image ? (
                       <Image
                         src={product.image}

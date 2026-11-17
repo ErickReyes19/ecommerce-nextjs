@@ -17,6 +17,11 @@ export function pickDistinctByCategory<T extends { image: string | null; categor
   return picked;
 }
 
+/** La portada solo destaca productos con foto; los demás siguen en el catálogo. */
+export function withImage<T extends { image: string | null }>(items: T[], limit: number): T[] {
+  return items.filter((item) => Boolean(item.image)).slice(0, limit);
+}
+
 export function onlyRealDeals<T extends { basePrice: number; compareAtPrice: number | null }>(items: T[]): T[] {
   return items.filter((item) => item.compareAtPrice !== null && item.compareAtPrice > item.basePrice);
 }

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { onlyRealDeals, pickDistinctByCategory } from "./portada-select.ts";
+import { onlyRealDeals, pickDistinctByCategory, withImage } from "./portada-select.ts";
 
 const p = (id: string, slug: string, image: string | null = "https://x/y.webp") => ({
   id,
@@ -30,4 +30,13 @@ test("onlyRealDeals deja solo productos cuyo precio anterior es mayor", () => {
     { basePrice: 10, compareAtPrice: null },
   ]);
   assert.deepEqual(deals, [{ basePrice: 75, compareAtPrice: 100 }]);
+});
+
+test("withImage descarta productos sin foto y respeta el límite", () => {
+  const items = [p("a", "x", null), p("b", "x"), p("c", "y"), p("d", "z")];
+  assert.deepEqual(
+    withImage(items, 2).map((item) => item.id),
+    ["b", "c"],
+  );
+  assert.equal(withImage([p("a", "x", null)], 3).length, 0);
 });
