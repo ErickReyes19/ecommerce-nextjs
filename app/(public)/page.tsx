@@ -19,7 +19,7 @@ export default async function HomePage() {
   const data = await getPortadaData();
 
   return (
-    <div className="pb-16 lg:pb-24">
+    <div>
       <HeroSection products={data.hero} categories={data.categories} totals={data.totals} />
       <CategoriesGrid categories={data.categories} />
       <PromoSection products={data.deals} />

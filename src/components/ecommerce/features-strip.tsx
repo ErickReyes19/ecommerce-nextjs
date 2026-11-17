@@ -4,7 +4,7 @@ import { Banknote, CreditCard, Heart } from "lucide-react";
 /** Franja de confianza: solo hechos que la tienda puede sostener. */
 export function FeaturesStrip() {
   return (
-    <section aria-label="Comprar con confianza" className="mt-16 border-y border-border lg:mt-24">
+    <section aria-label="Comprar con confianza" className="mt-16 border-t border-border lg:mt-24">
       <ul className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 md:grid-cols-3 md:gap-0 md:divide-x md:divide-border lg:px-8">
         <li className="flex gap-3 md:pr-6">
           <CreditCard aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-primary" />

@@ -40,7 +40,7 @@ const PublicLayout: React.FC<{ children: React.ReactNode }> = async ({
     <div className={`${archivo.variable} tienda flex min-h-screen flex-col bg-background text-foreground`}>
       <CartHydrator />
       <WishlistHydrator enabled={Boolean(session?.IdUser)} />
-      <StoreNavbar cartCount={cartCount} accountHref={accountHref} />
+      <StoreNavbar cartCount={cartCount} accountHref={accountHref} themeClassName={`${archivo.variable} tienda`} />
       <main className="flex-1">{children}</main>
       <StoreFooter />
     </div>
