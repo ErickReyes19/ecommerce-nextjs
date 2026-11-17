@@ -1,68 +1,48 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { SectionHeader } from "@/src/components/ecommerce/section-header";
+import { getCategoryLabel } from "@/src/lib/category-labels";
+import type { PortadaCategory } from "@/app/(public)/portada-data";
 
-type CategoryItem = {
-  name: string;
-  slug: string;
-  image: string;
-  productCount: number;
-};
-
-export function CategoriesGrid({
-  categories,
-}: {
-  categories: CategoryItem[];
-}) {
+/** "Pasillos": las categorías con más productos, cada una con la foto de uno de sus productos. */
+export function CategoriesGrid({ categories }: { categories: PortadaCategory[] }) {
   if (categories.length === 0) return null;
 
   return (
-    <section className="mx-auto max-w-7xl px-6 py-20">
-      <div className="mb-12 flex items-end justify-between">
-        <div>
-          <p className="mb-2 text-sm font-medium uppercase tracking-widest text-muted-foreground">
-            Categorias
-          </p>
-          <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-            Explora por categoria
-          </h2>
-        </div>
-        <Link
-          href="/productos?vista=categorias"
-          className="hidden items-center gap-1 text-sm font-medium text-foreground transition-colors hover:text-muted-foreground md:flex"
-        >
-          Ver todas
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      </div>
+    <section aria-labelledby="pasillos" className="mx-auto mt-16 max-w-7xl px-4 sm:px-6 lg:mt-24 lg:px-8">
+      <SectionHeader id="pasillos" title="Pasillos" href="/productos" linkLabel="Ver catálogo" />
 
-      <div className="grid gap-6 md:grid-cols-3">
-        {categories.slice(0, 3).map((cat, i) => (
-          <Link
-            key={cat.slug}
-            href={`/productos?categoria=${cat.slug}`}
-            className="group relative overflow-hidden rounded-2xl bg-secondary"
-          >
-            <div className="aspect-[4/3] overflow-hidden">
-              <Image
-                src={cat.image}
-                alt={cat.name}
-                width={600}
-                height={450}
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            </div>
-            <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-foreground/60 to-transparent p-6">
-              <p className="text-xs font-medium uppercase tracking-wider text-primary-foreground/70">
-                {cat.productCount} productos
+      <ul
+        aria-label="Categorías"
+        className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-5 md:gap-x-5 md:gap-y-8 md:overflow-visible md:px-0 md:pb-0"
+      >
+        {categories.map((category) => (
+          <li key={category.slug} className="w-[42%] shrink-0 snap-start sm:w-[30%] md:w-auto">
+            <Link
+              href={`/productos?categoria=${category.slug}`}
+              className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <div className="relative aspect-square overflow-hidden rounded-lg bg-vitrina">
+                {category.image ? (
+                  <Image
+                    src={category.image}
+                    alt=""
+                    fill
+                    sizes="(max-width: 768px) 42vw, 20vw"
+                    className="object-contain p-[14%]"
+                  />
+                ) : null}
+              </div>
+              <p className="mt-3 font-condensed text-[22px] font-bold leading-tight transition-colors group-hover:text-primary">
+                {getCategoryLabel(category)}
               </p>
-              <h3 className="text-xl font-bold text-primary-foreground">
-                {cat.name}
-              </h3>
-            </div>
-          </Link>
+              <p className="text-sm text-muted-foreground">
+                {category.productCount} {category.productCount === 1 ? "producto" : "productos"}
+              </p>
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }

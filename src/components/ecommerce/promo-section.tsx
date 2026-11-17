@@ -1,46 +1,25 @@
-import Image from "next/image";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ProductCard } from "@/src/components/ecommerce/product-card";
+import { SectionHeader } from "@/src/components/ecommerce/section-header";
+import type { PortadaProduct } from "@/app/(public)/portada-data";
 
-export function PromoSection() {
+/** Ofertas: productos con precio anterior mayor al actual, en un carril horizontal. */
+export function PromoSection({ products }: { products: PortadaProduct[] }) {
+  if (products.length === 0) return null;
+
   return (
-    <section className="mx-auto max-w-7xl px-6 py-20">
-      <div className="relative overflow-hidden rounded-3xl bg-foreground text-background">
-        <div className="grid items-center md:grid-cols-2">
-          <div className="p-10 md:p-16">
-            <p className="mb-3 text-sm font-medium uppercase tracking-widest text-background/60">
-              Oferta especial
-            </p>
-            <h2 className="mb-4 font-serif text-3xl font-bold leading-tight md:text-4xl">
-              Nuevos productos cada semana
-            </h2>
-            <p className="mb-8 leading-relaxed text-background/70">
-              Suscribete a nuestro boletin y recibe un 10% de descuento en tu
-              primera compra. No te pierdas las ultimas novedades.
-            </p>
-            <Button
-              asChild
-              variant="secondary"
-              size="lg"
-              className="rounded-full px-8"
-            >
-              <Link href="/productos">
-                Comprar ahora
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-          <div className="relative hidden aspect-square md:block">
-            <Image
-              src="/images/hero-store.jpg"
-              alt="Productos destacados"
-              fill
-              className="object-cover"
-            />
-          </div>
-        </div>
-      </div>
+    <section aria-labelledby="ofertas" className="mx-auto mt-16 max-w-7xl px-4 sm:px-6 lg:mt-24 lg:px-8">
+      <SectionHeader id="ofertas" title="Ofertas" description="Precios rebajados en este momento." />
+
+      <ul
+        aria-label="Productos en oferta"
+        className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:gap-5 sm:px-6 lg:mx-0 lg:px-0"
+      >
+        {products.map((product) => (
+          <li key={product.id} className="flex w-[46%] shrink-0 snap-start sm:w-[30%] lg:w-[calc((100%-5rem)/5)]">
+            <ProductCard product={product} />
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

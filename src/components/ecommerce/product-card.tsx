@@ -31,7 +31,7 @@ export function ProductCard({ product, priority = false }: Props) {
   });
 
   return (
-    <article className="group relative flex flex-col rounded-lg ring-offset-background has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring has-[a:focus-visible]:ring-offset-2">
+    <article className="group relative flex w-full flex-col rounded-lg ring-offset-background has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring has-[a:focus-visible]:ring-offset-2">
       <div className="relative aspect-square overflow-hidden rounded-lg bg-vitrina">
         {product.image ? (
           <Image

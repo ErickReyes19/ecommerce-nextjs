@@ -1,43 +1,114 @@
 import Link from "next/link";
+import Image from "next/image";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { PriceTag } from "@/src/components/ecommerce/price-tag";
+import { HangingTag } from "@/src/components/ecommerce/hanging-tag";
+import { getCategoryLabel } from "@/src/lib/category-labels";
+import type { PortadaCategory, PortadaData, PortadaProduct } from "@/app/(public)/portada-data";
 
-export function HeroSection() {
+const CHIP_COUNT = 6;
+
+export function HeroSection({
+  products,
+  categories,
+  totals,
+}: {
+  products: PortadaProduct[];
+  categories: PortadaCategory[];
+  totals: PortadaData["totals"];
+}) {
+  const payment = "Pagas en lempiras con tarjeta, de forma segura.";
+  const subtitle =
+    totals.products > 0
+      ? `${totals.products} productos en ${totals.categories} categorías. ${payment}`
+      : payment;
+
   return (
-    <section className="relative overflow-hidden">
-      <div className="mx-auto flex max-w-7xl flex-col items-center px-6 py-24 text-center lg:py-36">
-        <p className="mb-6 text-sm font-medium uppercase tracking-widest text-muted-foreground">
-          Nueva coleccion disponible
-        </p>
-        <h1 className="max-w-4xl text-balance font-serif text-5xl font-bold leading-tight tracking-tight text-foreground md:text-7xl">
-          Calidad que se siente, estilo que se ve
-        </h1>
-        <p className="mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
-          Descubre nuestra seleccion curada de productos premium. Diseno
-          cuidado, materiales de primera y envio rapido a tu puerta.
-        </p>
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <Button asChild size="lg" className="rounded-full px-8">
-            <Link href="/productos">
-              Explorar productos
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-          <Button
-            asChild
-            variant="outline"
-            size="lg"
-            className="rounded-full px-8"
+    <section aria-labelledby="portada-titulo" className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 sm:pt-12 lg:px-8 lg:pt-16">
+      <div className={products.length > 0 ? "grid items-center gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16" : ""}>
+        <div className="min-w-0">
+          <h1
+            id="portada-titulo"
+            className="max-w-[14ch] text-balance font-condensed text-[46px] font-extrabold leading-[0.95] tracking-[-0.01em] sm:text-[64px] lg:text-[80px]"
           >
-            <Link href="/productos?vista=categorias">Ver categorias</Link>
-          </Button>
-        </div>
-      </div>
+            Lo de la casa, el cel y el clóset, con el precio a la vista.
+          </h1>
+          <p className="mt-5 max-w-md text-base text-muted-foreground sm:text-lg">{subtitle}</p>
 
-      {/* Decorative background */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -right-40 -top-40 h-[500px] w-[500px] rounded-full bg-secondary/50" />
-        <div className="absolute -bottom-20 -left-20 h-[300px] w-[300px] rounded-full bg-secondary/30" />
+          <form action="/productos" role="search" className="mt-8 flex max-w-xl gap-2">
+            <label htmlFor="portada-busqueda" className="sr-only">
+              Buscar productos
+            </label>
+            <div className="relative min-w-0 flex-1">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+              />
+              <input
+                id="portada-busqueda"
+                name="q"
+                type="search"
+                placeholder="Buscar productos o marcas"
+                className="h-[52px] w-full rounded-md border border-input bg-card pl-12 pr-4 text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              />
+            </div>
+            <Button type="submit" size="lg" className="h-[52px] shrink-0 px-6 text-base font-semibold">
+              Buscar
+            </Button>
+          </form>
+
+          {categories.length > 0 ? (
+            <nav aria-label="Categorías populares" className="-mx-4 mt-5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+              <ul className="flex gap-2 sm:flex-wrap">
+                {categories.slice(0, CHIP_COUNT).map((category) => (
+                  <li key={category.slug} className="shrink-0">
+                    <Link
+                      href={`/productos?categoria=${category.slug}`}
+                      className="inline-flex h-9 items-center whitespace-nowrap rounded-full border border-border bg-card px-4 text-sm font-medium transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    >
+                      {getCategoryLabel(category)}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ) : null}
+        </div>
+
+        {products.length > 0 ? (
+          <ul aria-label="Productos destacados" className="grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-5">
+            {products.map((product, index) => (
+              <li key={product.id} className="min-w-0">
+                <Link
+                  href={`/productos/${product.slug}`}
+                  className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-vitrina">
+                    {product.image ? (
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        priority={index === 0}
+                        sizes="(max-width: 1024px) 50vw, 25vw"
+                        className="object-contain p-[12%]"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="-mt-5 pl-2">
+                    <HangingTag index={index}>
+                      <PriceTag amount={product.basePrice} size="md" className="sm:text-[30px]" />
+                    </HangingTag>
+                  </div>
+                  <p className="mt-2 line-clamp-1 px-0.5 text-[13px] text-muted-foreground transition-colors group-hover:text-foreground">
+                    {product.name}
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
     </section>
   );
