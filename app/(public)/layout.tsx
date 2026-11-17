@@ -1,4 +1,5 @@
 import React from "react";
+import { Archivo } from "next/font/google";
 import { getSession } from "@/auth";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
@@ -6,6 +7,14 @@ import { StoreNavbar } from "@/src/components/ecommerce/store-navbar";
 import { StoreFooter } from "@/src/components/ecommerce/store-footer";
 import { CartHydrator } from "@/src/components/ecommerce/cart-hydrator";
 import { WishlistHydrator } from "@/src/components/ecommerce/wishlist-hydrator";
+
+// Identidad tipográfica de la tienda: Archivo variable en peso y ancho.
+const archivo = Archivo({
+  subsets: ["latin"],
+  axes: ["wdth"],
+  variable: "--font-archivo",
+  display: "swap",
+});
 
 async function getCartCount() {
   try {
@@ -28,7 +37,7 @@ const PublicLayout: React.FC<{ children: React.ReactNode }> = async ({
   const accountHref = session ? "/mi-perfil" : "/login";
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className={`${archivo.variable} tienda flex min-h-screen flex-col bg-background text-foreground`}>
       <CartHydrator />
       <WishlistHydrator enabled={Boolean(session?.IdUser)} />
       <StoreNavbar cartCount={cartCount} accountHref={accountHref} />

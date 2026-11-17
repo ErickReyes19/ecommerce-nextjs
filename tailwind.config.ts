@@ -41,6 +41,20 @@ const config: Config = {
   				DEFAULT: 'hsl(var(--destructive))',
   				foreground: 'hsl(var(--destructive-foreground))'
   			},
+  			mango: {
+  				DEFAULT: 'hsl(var(--mango))',
+  				foreground: 'hsl(var(--mango-foreground))'
+  			},
+  			guara: {
+  				DEFAULT: 'hsl(var(--guara))',
+  				foreground: 'hsl(var(--guara-foreground))',
+  				texto: 'hsl(var(--guara-texto))'
+  			},
+  			vitrina: 'hsl(var(--vitrina))',
+  			pie: {
+  				DEFAULT: 'hsl(var(--pie))',
+  				foreground: 'hsl(var(--pie-foreground))'
+  			},
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
@@ -83,11 +97,20 @@ const config: Config = {
   				to: {
   					height: '0'
   				}
+  			},
+  			'heart-pop': {
+  				'0%, 100%': {
+  					transform: 'scale(1)'
+  				},
+  				'45%': {
+  					transform: 'scale(1.3)'
+  				}
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'heart-pop': 'heart-pop 0.3s ease-out'
   		}
   	}
   },
