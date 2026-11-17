@@ -49,7 +49,7 @@ export function HeroSection({
                 id="portada-busqueda"
                 name="q"
                 type="search"
-                placeholder="Buscar productos o marcas"
+                placeholder="¿Qué buscas?"
                 className="h-[52px] w-full rounded-md border border-input bg-card pl-12 pr-4 text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               />
             </div>
@@ -59,7 +59,10 @@ export function HeroSection({
           </form>
 
           {categories.length > 0 ? (
-            <nav aria-label="Categorías populares" className="-mx-4 mt-5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+            <nav
+              aria-label="Categorías populares"
+              className="-mx-4 mt-5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
+            >
               <ul className="flex gap-2 sm:flex-wrap">
                 {categories.slice(0, CHIP_COUNT).map((category) => (
                   <li key={category.slug} className="shrink-0">

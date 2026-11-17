@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { pickFirstValidImageUrl } from "@/src/lib/image-url";
-import { onlyRealDeals, pickDistinctByCategory, withImage } from "@/src/lib/portada-select";
+import { onlyRealDeals, pickDistinctByCategory, rankCategories, withImage } from "@/src/lib/portada-select";
 import { getWishlistProductIdsForCurrentUser } from "@/src/actions/wishlist-actions";
 
 export type PortadaProduct = {
@@ -122,15 +122,15 @@ export async function getPortadaData(): Promise<PortadaData> {
 
     const toProduct = (row: ProductRow) => toPortadaProduct(row, wishlist);
 
-    const categories = categoryRows
-      .map((category) => ({
+    const categories = rankCategories(
+      categoryRows.map((category) => ({
         name: category.name,
         slug: category.slug,
         productCount: category._count.products,
         image: pickFirstValidImageUrl(category.products.flatMap((product) => product.images.map((image) => image.url))),
-      }))
-      .sort((a, b) => b.productCount - a.productCount)
-      .slice(0, CATEGORY_COUNT);
+      })),
+      CATEGORY_COUNT,
+    );
 
     return {
       hero: pickDistinctByCategory(topRated.map(toProduct), HERO_COUNT),

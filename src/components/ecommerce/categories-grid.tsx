@@ -15,7 +15,7 @@ export function CategoriesGrid({ categories }: { categories: PortadaCategory[] }
 
       <ul
         aria-label="Categorías"
-        className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-5 md:gap-x-5 md:gap-y-8 md:overflow-visible md:px-0 md:pb-0"
+        className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6 md:mx-0 md:grid md:grid-cols-5 md:gap-x-5 md:gap-y-8 md:overflow-visible md:px-0 md:pb-0"
       >
         {categories.map((category) => (
           <li key={category.slug} className="w-[42%] shrink-0 snap-start sm:w-[30%] md:w-auto">

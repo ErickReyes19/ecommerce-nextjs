@@ -22,6 +22,13 @@ export function withImage<T extends { image: string | null }>(items: T[], limit:
   return items.filter((item) => Boolean(item.image)).slice(0, limit);
 }
 
+/** Pasillos: primero las categorías que tienen foto, y dentro de cada grupo las de más productos. */
+export function rankCategories<T extends { productCount: number; image: string | null }>(items: T[], limit: number): T[] {
+  return [...items]
+    .sort((a, b) => Number(Boolean(b.image)) - Number(Boolean(a.image)) || b.productCount - a.productCount)
+    .slice(0, limit);
+}
+
 export function onlyRealDeals<T extends { basePrice: number; compareAtPrice: number | null }>(items: T[]): T[] {
   return items.filter((item) => item.compareAtPrice !== null && item.compareAtPrice > item.basePrice);
 }

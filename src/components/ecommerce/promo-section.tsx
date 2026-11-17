@@ -12,7 +12,7 @@ export function PromoSection({ products }: { products: PortadaProduct[] }) {
 
       <ul
         aria-label="Productos en oferta"
-        className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:gap-5 sm:px-6 lg:mx-0 lg:px-0"
+        className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:gap-5 sm:px-6 lg:mx-0 lg:scroll-px-0 lg:px-0"
       >
         {products.map((product) => (
           <li key={product.id} className="flex w-[46%] shrink-0 snap-start sm:w-[30%] lg:w-[calc((100%-5rem)/5)]">

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { onlyRealDeals, pickDistinctByCategory, withImage } from "./portada-select.ts";
+import { onlyRealDeals, pickDistinctByCategory, rankCategories, withImage } from "./portada-select.ts";
 
 const p = (id: string, slug: string, image: string | null = "https://x/y.webp") => ({
   id,
@@ -39,4 +39,16 @@ test("withImage descarta productos sin foto y respeta el límite", () => {
     ["b", "c"],
   );
   assert.equal(withImage([p("a", "x", null)], 3).length, 0);
+});
+
+test("rankCategories pone primero las categorías con foto y luego las de más productos", () => {
+  const c = (slug: string, productCount: number, image: string | null) => ({ slug, productCount, image });
+  const ranked = rankCategories(
+    [c("sin-foto-grande", 50, null), c("chica", 3, "https://x/a.webp"), c("grande", 30, "https://x/b.webp")],
+    2,
+  );
+  assert.deepEqual(
+    ranked.map((item) => item.slug),
+    ["grande", "chica"],
+  );
 });
