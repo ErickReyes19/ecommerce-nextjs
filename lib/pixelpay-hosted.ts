@@ -1,14 +1,22 @@
 import crypto from "crypto";
 
+// Quita espacios y comillas que se cuelan al pegar valores en el panel del hosting
+const env = (name: string) => (process.env[name] || "").trim().replace(/^["']|["']$/g, "").trim();
+
 export function getPixelPayEndpoint() {
-  const raw = (process.env.PIXELPAY_ENDPOINT || "").trim().replace(/\/$/, "");
+  const raw = env("PIXELPAY_ENDPOINT").replace(/\/+$/, "");
   if (!raw) return "";
   return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 }
 
-const keyId = () => process.env.PIXELPAY_KEY_ID || "";
-const secretKey = () => process.env.PIXELPAY_SECRET_KEY || "";
-const hashSecret = () => process.env.PIXELPAY_PAYMENT_HASH_SECRET || secretKey();
+const keyId = () => env("PIXELPAY_KEY_ID");
+const secretKey = () => env("PIXELPAY_SECRET_KEY");
+const hashSecret = () => env("PIXELPAY_PAYMENT_HASH_SECRET") || secretKey();
+
+export function isPixelPayProduction() {
+  const value = env("PIXELPAY_ENVIRONMENT").toLowerCase();
+  return value === "production" || value === "live";
+}
 
 export function getPixelPayConfigError() {
   if (!getPixelPayEndpoint()) return "Falta PIXELPAY_ENDPOINT.";
@@ -36,10 +44,7 @@ export function verifyPaymentHash(orderId: string, paymentHash?: string | null) 
 }
 
 function getHostedPath() {
-  const env = (process.env.PIXELPAY_ENVIRONMENT || "sandbox").toLowerCase();
-  return env === "production" || env === "live"
-    ? "/api/v2/transaction/hosted/other"
-    : "/api/v2/transaction/hosted/sandbox";
+  return isPixelPayProduction() ? "/api/v2/transaction/hosted/other" : "/api/v2/transaction/hosted/sandbox";
 }
 
 type HostedResponse = {
