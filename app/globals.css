@@ -185,6 +185,17 @@
   }
 }
 
+@layer components {
+  /* Forma de etiqueta de precio: punta a la izquierda y agujero para el hilo. Medidas en em. */
+  .price-tag {
+    --tag-point: 0.55em;
+    clip-path: polygon(var(--tag-point) 0, 100% 0, 100% 100%, var(--tag-point) 100%, 0 50%);
+    -webkit-mask: radial-gradient(circle at calc(var(--tag-point) + 0.12em) 50%, transparent 0.13em, #000 0.15em);
+    mask: radial-gradient(circle at calc(var(--tag-point) + 0.12em) 50%, transparent 0.13em, #000 0.15em);
+    border-radius: 0 0.18em 0.18em 0;
+  }
+}
+
 @layer utilities {
   /* Archivo es variable en ancho (62–125 %). */
   .font-condensed {
