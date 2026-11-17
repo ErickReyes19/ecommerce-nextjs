@@ -1,6 +1,15 @@
+import { getSessionPermisos } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
+// Consulta la BD en cada request; sin esto Next la prerenderiza en el build y falla si no hay conexión
+export const dynamic = "force-dynamic";
+
 export async function GET() {
+  const permisos = await getSessionPermisos();
+  if (!permisos?.includes("ver_reportes_admin")) {
+    return Response.json({ error: "No autorizado" }, { status: 403 });
+  }
+
   const orderItems = await prisma.orderItem.findMany({
     select: {
       quantity: true,
